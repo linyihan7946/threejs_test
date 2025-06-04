@@ -1,32 +1,15 @@
-<!--
- * @Author: LinYiHan
- * @Date: 2023-04-23 13:49:45
- * @Description: 
- * @Version: 1.0
--->
+<script setup lang="ts">
+import ThreeScene from './components/ThreeScene.vue'
+</script>
+
 <template>
-  <router-view />
+  <ThreeScene />
 </template>
 
-<style lang="less">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
-#nav {
-  padding: 30px;
-
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
-    }
-  }
+<style>
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 </style>
