@@ -9,28 +9,25 @@ import { ThreejsUtils } from '../core/ThreejsUtils'
 const container = ref<HTMLElement | null>(null)
 let threejsUtils: ThreejsUtils | null = null
 
-const handleResize = () => {
-  if (!container.value || !threejsUtils) return
-  threejsUtils.resize(container.value.clientWidth, container.value.clientHeight)
-}
-
 onMounted(() => {
   if (container.value) {
     threejsUtils = new ThreejsUtils(container.value)
-    window.addEventListener('resize', handleResize)
   }
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
   threejsUtils?.dispose()
 })
 </script>
 
 <style scoped>
 .three-container {
-  width: 100%;
+  width: 100vw;
   height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
   overflow: hidden;
+  z-index: 0;
 }
 </style>

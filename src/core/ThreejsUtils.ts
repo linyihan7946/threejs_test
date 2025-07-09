@@ -14,15 +14,27 @@ export class ThreejsUtils {
         this.scene = new THREE.Scene()
         this.scene.background = new THREE.Color(0xf0f0f0)
 
+        // 获取窗口尺寸
+        const width = window.innerWidth
+        const height = window.innerHeight
+
         // 创建相机
-        const width = container.clientWidth
-        const height = container.clientHeight
         this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000)
         this.camera.position.z = 5
 
         // 创建渲染器
         this.renderer = new THREE.WebGLRenderer({ antialias: true })
         this.renderer.setSize(width, height)
+        this.renderer.setPixelRatio(window.devicePixelRatio)
+
+        // 设置 canvas 样式为全屏
+        this.renderer.domElement.style.position = 'fixed'
+        this.renderer.domElement.style.top = '0'
+        this.renderer.domElement.style.left = '0'
+        this.renderer.domElement.style.width = '100vw'
+        this.renderer.domElement.style.height = '100vh'
+        this.renderer.domElement.style.zIndex = '1'
+
         container.appendChild(this.renderer.domElement)
 
         // 创建控制器
@@ -34,6 +46,9 @@ export class ThreejsUtils {
 
         // 添加光源
         this.addLights()
+
+        // 监听窗口大小变化
+        window.addEventListener('resize', this.onWindowResize.bind(this))
 
         // 开始动画循环
         this.animate()
@@ -66,6 +81,16 @@ export class ThreejsUtils {
         this.scene.add(directionalLight)
     }
 
+    private onWindowResize(): void {
+        const width = window.innerWidth
+        const height = window.innerHeight
+
+        this.camera.aspect = width / height
+        this.camera.updateProjectionMatrix()
+        this.renderer.setSize(width, height)
+        this.renderer.setPixelRatio(window.devicePixelRatio)
+    }
+
     private animate = (): void => {
         requestAnimationFrame(this.animate)
 
@@ -85,6 +110,7 @@ export class ThreejsUtils {
     }
 
     public dispose(): void {
+        window.removeEventListener('resize', this.onWindowResize.bind(this))
         this.renderer.dispose()
     }
 }
