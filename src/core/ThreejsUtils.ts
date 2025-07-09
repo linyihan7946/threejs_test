@@ -42,7 +42,6 @@ export class ThreejsUtils {
 
         // 创建控制器
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
-        this.controls.enableDamping = true
 
         // 初始化帧率显示
         this.initStats(container)
@@ -73,17 +72,6 @@ export class ThreejsUtils {
         container.appendChild(this.stats.dom)
     }
 
-    private setCameraFromObject3D(object3D: THREE.Object3D): void {
-        const box = new THREE.Box3().setFromObject(object3D)
-        const center = box.getCenter(new THREE.Vector3())
-        const size = box.getSize(new THREE.Vector3())
-        const maxDim = Math.max(size.x, size.y, size.z)
-        const distance = maxDim
-        this.camera.position.copy(center.clone().add(new THREE.Vector3(distance, distance, distance)))
-        this.camera.up.set(0, 1, 0)
-        this.camera.lookAt(center)
-    }
-
     private createMeshes(): void {
         const url = "./场景2.gltf";
         GltfLoader.Instance.loadGltf(url).then((gltf) => {
@@ -94,19 +82,14 @@ export class ThreejsUtils {
             const size = box.getSize(new THREE.Vector3())
             const center = box.getCenter(new THREE.Vector3())
             const moveMatrix = new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z)
-            const rotateMatrix = new THREE.Matrix4().makeRotationX(Math.PI / 2)
             object.applyMatrix4(moveMatrix)
-            object.applyMatrix4(rotateMatrix)
-            box.setFromObject(object); box.getCenter(center); box.getSize(size);
-            const moveMatrix2 = new THREE.Matrix4().makeTranslation(0, 0, size.z / 2)
-            object.applyMatrix4(moveMatrix2)
             box.setFromObject(object); box.getCenter(center); box.getSize(size);
 
             const maxDimension = Math.max(size.x, size.y, size.z)
-            const target = new THREE.Vector3(center.x, center.y, box.min.z);
+            const target = new THREE.Vector3(center.x, center.y, center.z);
             const position = target.clone().add(new THREE.Vector3(maxDimension/2, maxDimension/2, maxDimension/2));
             this.camera.position.copy(position)
-            this.camera.up.set(0, 0, 1)
+            this.camera.up.set(0, 1, 0)
             this.camera.lookAt(target)
         })
     }
