@@ -82,18 +82,32 @@ export class ThreejsUtils {
         this.camera.position.copy(center.clone().add(new THREE.Vector3(distance, distance, distance)))
         this.camera.up.set(0, 1, 0)
         this.camera.lookAt(center)
-        this.camera.near = 10;
-        this.camera.far = 1.0E6;
     }
 
     private createMeshes(): void {
         const url = "./场景2.gltf";
         GltfLoader.Instance.loadGltf(url).then((gltf) => {
             const object = gltf.scene.clone(true);
-            const matrix = new THREE.Matrix4().makeRotationX(Math.PI / 2);
-            object.applyMatrix4(matrix);
             this.scene.add(object);
-            this.setCameraFromObject3D(object);
+
+            const box = new THREE.Box3().setFromObject(object)
+            const size = box.getSize(new THREE.Vector3())
+            const center = box.getCenter(new THREE.Vector3())
+            const moveMatrix = new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z)
+            const rotateMatrix = new THREE.Matrix4().makeRotationX(Math.PI / 2)
+            object.applyMatrix4(moveMatrix)
+            object.applyMatrix4(rotateMatrix)
+            box.setFromObject(object); box.getCenter(center); box.getSize(size);
+            const moveMatrix2 = new THREE.Matrix4().makeTranslation(0, 0, size.z / 2)
+            object.applyMatrix4(moveMatrix2)
+            box.setFromObject(object); box.getCenter(center); box.getSize(size);
+
+            const maxDimension = Math.max(size.x, size.y, size.z)
+            const target = new THREE.Vector3(center.x, center.y, box.min.z);
+            const position = target.clone().add(new THREE.Vector3(maxDimension/2, maxDimension/2, maxDimension/2));
+            this.camera.position.copy(position)
+            this.camera.up.set(0, 0, 1)
+            this.camera.lookAt(target)
         })
     }
 
