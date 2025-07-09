@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GltfLoader } from './GltfLoader'
+import Stats from 'stats.js'
 
 export class ThreejsUtils {
     private scene: THREE.Scene = new THREE.Scene()
@@ -9,6 +10,7 @@ export class ThreejsUtils {
     private controls!: OrbitControls
     private cube!: THREE.Mesh
     private sphere!: THREE.Mesh
+    private stats!: Stats
 
     constructor(container: HTMLElement) {
         // 创建场景
@@ -42,6 +44,9 @@ export class ThreejsUtils {
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
         this.controls.enableDamping = true
 
+        // 初始化帧率显示
+        this.initStats(container)
+
         // 创建几何体
         this.createMeshes()
 
@@ -53,6 +58,19 @@ export class ThreejsUtils {
 
         // 开始动画循环
         this.animate()
+    }
+
+    private initStats(container: HTMLElement): void {
+        this.stats = new Stats()
+        this.stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
+
+        // 设置样式
+        this.stats.dom.style.position = 'fixed'
+        this.stats.dom.style.top = '0'
+        this.stats.dom.style.left = '0'
+        this.stats.dom.style.zIndex = '100'
+
+        container.appendChild(this.stats.dom)
     }
 
     private setCameraFromObject3D(object3D: THREE.Object3D): void {
@@ -103,6 +121,9 @@ export class ThreejsUtils {
     private animate = (): void => {
         requestAnimationFrame(this.animate)
 
+        // 开始帧率统计
+        this.stats.begin()
+
         // 旋转物体
         // this.cube.rotation.x += 0.01
         // this.cube.rotation.y += 0.01
@@ -110,6 +131,9 @@ export class ThreejsUtils {
 
         this.controls.update()
         this.renderer.render(this.scene, this.camera)
+
+        // 结束帧率统计
+        this.stats.end()
     }
 
     public resize(width: number, height: number): void {
