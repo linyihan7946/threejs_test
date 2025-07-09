@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { GltfLoader } from './GltfLoader'
 
 export class ThreejsUtils {
     private scene: THREE.Scene = new THREE.Scene()
@@ -19,7 +20,7 @@ export class ThreejsUtils {
         const height = window.innerHeight
 
         // 创建相机
-        this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000)
+        this.camera = new THREE.PerspectiveCamera(75, width / height, 10, 1.0E6)
         this.camera.position.z = 5
 
         // 创建渲染器
@@ -54,20 +55,28 @@ export class ThreejsUtils {
         this.animate()
     }
 
-    private createMeshes(): void {
-        // 创建立方体
-        const cubeGeometry = new THREE.BoxGeometry(1, 1, 1)
-        const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 })
-        this.cube = new THREE.Mesh(cubeGeometry, cubeMaterial)
-        this.cube.position.x = -2
-        this.scene.add(this.cube)
+    private setCameraFromObject3D(object3D: THREE.Object3D): void {
+        const box = new THREE.Box3().setFromObject(object3D)
+        const center = box.getCenter(new THREE.Vector3())
+        const size = box.getSize(new THREE.Vector3())
+        const maxDim = Math.max(size.x, size.y, size.z)
+        const distance = maxDim
+        this.camera.position.copy(center.clone().add(new THREE.Vector3(distance, distance, distance)))
+        this.camera.up.set(0, 1, 0)
+        this.camera.lookAt(center)
+        this.camera.near = 10;
+        this.camera.far = 1.0E6;
+    }
 
-        // 创建球体
-        const sphereGeometry = new THREE.SphereGeometry(0.5, 32, 32)
-        const sphereMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff })
-        this.sphere = new THREE.Mesh(sphereGeometry, sphereMaterial)
-        this.sphere.position.x = 2
-        this.scene.add(this.sphere)
+    private createMeshes(): void {
+        const url = "./场景2.gltf";
+        GltfLoader.Instance.loadGltf(url).then((gltf) => {
+            const object = gltf.scene.clone(true);
+            const matrix = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+            object.applyMatrix4(matrix);
+            this.scene.add(object);
+            this.setCameraFromObject3D(object);
+        })
     }
 
     private addLights(): void {
@@ -95,9 +104,9 @@ export class ThreejsUtils {
         requestAnimationFrame(this.animate)
 
         // 旋转物体
-        this.cube.rotation.x += 0.01
-        this.cube.rotation.y += 0.01
-        this.sphere.rotation.y += 0.01
+        // this.cube.rotation.x += 0.01
+        // this.cube.rotation.y += 0.01
+        // this.sphere.rotation.y += 0.01
 
         this.controls.update()
         this.renderer.render(this.scene, this.camera)
