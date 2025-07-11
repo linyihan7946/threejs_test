@@ -22,7 +22,7 @@ export class ThreejsUtils {
         const height = window.innerHeight
 
         // 创建相机
-        this.camera = new THREE.PerspectiveCamera(75, width / height, 10, 1.0E6)
+        this.camera = new THREE.PerspectiveCamera(60, width / height, 10, 1.0E6)
         this.camera.position.z = 5
 
         // 创建渲染器
@@ -87,7 +87,7 @@ export class ThreejsUtils {
 
             const maxDimension = Math.max(size.x, size.y, size.z)
             const target = new THREE.Vector3(center.x, center.y, center.z);
-            const position = target.clone().add(new THREE.Vector3(maxDimension/2, maxDimension/2, maxDimension/2));
+            const position = target.clone().add(new THREE.Vector3(maxDimension/2, maxDimension/2, -maxDimension/2));
             this.camera.position.copy(position)
             this.camera.up.set(0, 1, 0)
             this.camera.lookAt(target)
@@ -95,14 +95,19 @@ export class ThreejsUtils {
     }
 
     private addLights(): void {
-        // 添加环境光
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
-        this.scene.add(ambientLight)
+        // // 添加环境光
+        // const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+        // this.scene.add(ambientLight)
 
-        // 添加方向光
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
-        directionalLight.position.set(5, 5, 5)
-        this.scene.add(directionalLight)
+        // // 添加方向光
+        // const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
+        // directionalLight.position.set(5, 5, 5)
+        // this.scene.add(directionalLight)
+
+
+        const light = new THREE.HemisphereLight(0xffffff, 0x000000, Math.PI);
+        light.position.set(0, 1, 0);// 方向是从左到右，有点从前到后
+        this.scene.add(light);
     }
 
     private onWindowResize(): void {
