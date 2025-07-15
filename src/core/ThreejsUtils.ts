@@ -94,8 +94,12 @@ export class ThreejsUtils {
             this.camera.lookAt(target)
 
             const sceneOptimizer = SceneOptimizer.Instance;
-            const optimizedScene = sceneOptimizer.optimizeScene(object);
+            const newObject = sceneOptimizer.splitMultiMaterialMeshes(object);// 不会破面
             this.scene.remove(object);
+            this.scene.add(newObject);
+
+            const optimizedScene = sceneOptimizer.optimizeScene(newObject);
+            this.scene.remove(newObject);
             this.scene.add(optimizedScene);
         })
     }

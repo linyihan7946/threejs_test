@@ -53,6 +53,21 @@ export class SceneOptimizer {
     }
 
     /**
+     * 将多材质的mesh分解为多个单材质的mesh
+     * @param object 要处理的对象
+     * @returns 处理后的对象
+     */
+    public splitMultiMaterialMeshes(object: THREE.Object3D): THREE.Object3D {
+      // 创建一个新的根对象来替换原对象
+      const newObject = object.clone(false) // 只克隆对象本身，不包括子对象
+
+      // 递归处理所有子对象
+      this.processObjectRecursively(object, newObject)
+
+      return newObject
+    }
+
+    /**
      * 递归提取场景中的所有mesh和line对象
      * @param object 当前对象
      * @param worldMatrix 世界矩阵
@@ -65,6 +80,8 @@ export class SceneOptimizer {
         // 检查是否是mesh或line
         if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
             this.extractObjectInfo(object, currentWorldMatrix)
+        } else if (object.type !== "Object3D" && object.type !== "Group") {
+          console.log("object.type:%s", object.type);
         }
 
         // 递归处理子对象
@@ -80,6 +97,10 @@ export class SceneOptimizer {
      */
     private extractObjectInfo(object: THREE.Mesh | THREE.Line, worldMatrix: THREE.Matrix4): void {
         if (!object.geometry) return
+
+        if (Array.isArray(object.material)) {
+          console.log("有多个材质的物体");
+        }
 
         const materials = Array.isArray(object.material) ? object.material : [object.material]
 
@@ -288,6 +309,151 @@ export class SceneOptimizer {
             uniqueMaterials: this.materialDataMap.size,
             batchedMeshCount,
             singleObjectCount
+        }
+    }
+
+    /**
+     * 递归处理对象，分解多材质mesh
+     * @param sourceObject 源对象
+     * @param targetParent 目标父对象
+     */
+    private processObjectRecursively(sourceObject: THREE.Object3D, targetParent: THREE.Object3D): void {
+        for (const child of sourceObject.children) {
+            if (child instanceof THREE.Mesh && Array.isArray(child.material) && child.material.length > 1) {
+                // 这是一个多材质的mesh，需要分解
+                this.splitSingleMesh(child, targetParent)
+            } else {
+                // 普通对象或单材质mesh，直接克隆并递归处理
+                const clonedChild = child.clone(false)
+                targetParent.add(clonedChild)
+
+                // 如果是单材质mesh，复制材质
+                if (child instanceof THREE.Mesh && !Array.isArray(child.material)) {
+                    (clonedChild as THREE.Mesh).material = child.material
+                    ;(clonedChild as THREE.Mesh).geometry = child.geometry
+                } else if (child instanceof THREE.Line) {
+                    (clonedChild as THREE.Line).material = child.material
+                    ;(clonedChild as THREE.Line).geometry = child.geometry
+                }
+
+                // 递归处理子对象
+                this.processObjectRecursively(child, clonedChild)
+            }
+        }
+    }
+
+    /**
+     * 分解单个多材质mesh
+     * @param mesh 多材质mesh
+     * @param targetParent 目标父对象
+     */
+    private splitSingleMesh(mesh: THREE.Mesh, targetParent: THREE.Object3D): void {
+        const geometry = mesh.geometry
+        const materials = mesh.material as THREE.Material[]
+
+        // 检查几何体是否有groups属性用于多材质
+        if (geometry.groups && geometry.groups.length > 0) {
+            // 基于groups分解mesh
+            for (let i = 0; i < geometry.groups.length; i++) {
+                const group = geometry.groups[i]
+                const materialIndex = group.materialIndex ?? 0
+                const material = materials[materialIndex] || materials[0]
+
+                // 创建新的几何体，只包含当前group的面
+                const newGeometry = this.extractGeometryGroup(geometry, group)
+                if (newGeometry) {
+                    const newMesh = new THREE.Mesh(newGeometry, material)
+
+                    // 复制变换信息
+                    newMesh.position.copy(mesh.position)
+                    newMesh.rotation.copy(mesh.rotation)
+                    newMesh.scale.copy(mesh.scale)
+                    newMesh.matrix.copy(mesh.matrix)
+                    newMesh.matrixAutoUpdate = mesh.matrixAutoUpdate
+
+                    // 复制其他属性
+                    newMesh.name = mesh.name + '_material_' + i
+                    newMesh.userData = { ...mesh.userData }
+                    newMesh.visible = mesh.visible
+                    newMesh.castShadow = mesh.castShadow
+                    newMesh.receiveShadow = mesh.receiveShadow
+
+                    targetParent.add(newMesh)
+                }
+            }
+        } else {
+            // 如果没有groups，为每个材质创建一个相同几何体的mesh
+            for (let i = 0; i < materials.length; i++) {
+                const material = materials[i]
+                const newMesh = new THREE.Mesh(geometry, material)
+
+                // 复制变换信息
+                newMesh.position.copy(mesh.position)
+                newMesh.rotation.copy(mesh.rotation)
+                newMesh.scale.copy(mesh.scale)
+                newMesh.matrix.copy(mesh.matrix)
+                newMesh.matrixAutoUpdate = mesh.matrixAutoUpdate
+
+                // 复制其他属性
+                newMesh.name = mesh.name + '_material_' + i
+                newMesh.userData = { ...mesh.userData }
+                newMesh.visible = mesh.visible
+                newMesh.castShadow = mesh.castShadow
+                newMesh.receiveShadow = mesh.receiveShadow
+
+                targetParent.add(newMesh)
+            }
+        }
+    }
+
+    /**
+     * 根据group提取几何体的部分
+     * @param geometry 原始几何体
+     * @param group 几何体组
+     * @returns 新的几何体
+     */
+    private extractGeometryGroup(geometry: THREE.BufferGeometry, group: THREE.GeometryGroup): THREE.BufferGeometry | null {
+        try {
+            const newGeometry = new THREE.BufferGeometry()
+
+            // 复制顶点属性
+            for (const attributeName in geometry.attributes) {
+                const attribute = geometry.attributes[attributeName]
+                newGeometry.setAttribute(attributeName, attribute.clone())
+            }
+
+            // 处理索引
+            const index = geometry.getIndex()
+            if (index) {
+                // 提取指定范围的索引
+                const sourceArray = index.array
+                let newIndexArray: Uint16Array | Uint32Array | number[]
+
+                // 根据原数组类型创建新数组
+                if (sourceArray instanceof Uint16Array) {
+                    newIndexArray = new Uint16Array(group.count)
+                } else if (sourceArray instanceof Uint32Array) {
+                    newIndexArray = new Uint32Array(group.count)
+                } else {
+                    newIndexArray = new Array(group.count)
+                }
+
+                for (let i = 0; i < group.count; i++) {
+                    if (group.start + i < sourceArray.length) {
+                        newIndexArray[i] = sourceArray[group.start + i]
+                    }
+                }
+
+                newGeometry.setIndex(new THREE.BufferAttribute(newIndexArray as THREE.TypedArray, 1))
+            }
+
+            // 复制其他属性
+            newGeometry.userData = { ...geometry.userData }
+
+            return newGeometry
+        } catch (error) {
+            console.warn('提取几何体组失败:', error)
+            return null
         }
     }
 }
