@@ -20,6 +20,10 @@ interface MaterialData {
 
 export class SceneOptimizer {
     static Instance = new SceneOptimizer();
+
+    // 超过5个几何体就使用批处理
+    private useBatchedMeshGeometryCount = 5;
+
     private objectInfoMap: Map<THREE.Object3D, ObjectInfo> = new Map()
     private materialDataMap: Map<string, MaterialData> = new Map()
 
@@ -232,21 +236,30 @@ export class SceneOptimizer {
 
         for (const [, materialData] of this.materialDataMap) {
             const geometryInfoList = materialData.geometryInfo
-
-            if (geometryInfoList.length > 5) {
+            const material = materialData.material
+            if (material.type === "LineBasicMaterial") {
+              for (const geometryInfo of geometryInfoList) {
+                const newObject = this.createSingleObject(materialData.material, geometryInfo)
+                if (newObject) {
+                    optimizedScene.add(newObject)
+                }
+              }
+            } else {
+              if (geometryInfoList.length > this.useBatchedMeshGeometryCount) {
                 // 创建批处理mesh
                 const batchedMesh = this.createBatchedMesh(materialData.material, geometryInfoList)
                 if (batchedMesh) {
                     optimizedScene.add(batchedMesh.batchedMesh)
                 }
-            } else {
-                // 创建普通mesh或line
-                for (const geometryInfo of geometryInfoList) {
-                    const newObject = this.createSingleObject(materialData.material, geometryInfo)
-                    if (newObject) {
-                        optimizedScene.add(newObject)
-                    }
-                }
+              } else {
+                  // 创建普通mesh或line
+                  for (const geometryInfo of geometryInfoList) {
+                      const newObject = this.createSingleObject(materialData.material, geometryInfo)
+                      if (newObject) {
+                          optimizedScene.add(newObject)
+                      }
+                  }
+              }
             }
         }
 
@@ -265,7 +278,9 @@ export class SceneOptimizer {
 
             if (geometryInfo.object instanceof THREE.Mesh) {
                 newObject = new THREE.Mesh(geometryInfo.geometry, material)
-            } else if (geometryInfo.object instanceof THREE.Line) {
+            } else if (geometryInfo.object.type === "LineSegments") {
+                newObject = new THREE.LineSegments(geometryInfo.geometry, material)
+            } else if (geometryInfo.object.type === "Line") {
                 newObject = new THREE.Line(geometryInfo.geometry, material)
             } else {
                 return null
