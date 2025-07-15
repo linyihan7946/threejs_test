@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GltfLoader } from './GltfLoader'
 import Stats from 'stats.js'
+import { SceneOptimizer } from './SceneOptimizer'
 
 export class ThreejsUtils {
     private scene: THREE.Scene = new THREE.Scene()
@@ -91,6 +92,11 @@ export class ThreejsUtils {
             this.camera.position.copy(position)
             this.camera.up.set(0, 1, 0)
             this.camera.lookAt(target)
+
+            const sceneOptimizer = SceneOptimizer.Instance;
+            const optimizedScene = sceneOptimizer.optimizeScene(object);
+            this.scene.remove(object);
+            this.scene.add(optimizedScene);
         })
     }
 
