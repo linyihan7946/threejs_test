@@ -233,6 +233,7 @@ export class SceneOptimizer {
      */
     private createOptimizedScene(): THREE.Object3D {
         const optimizedScene = new THREE.Object3D()
+        const batchedMeshList: THREE.BatchedMesh[] = []
 
         for (const [, materialData] of this.materialDataMap) {
             const geometryInfoList = materialData.geometryInfo
@@ -250,6 +251,7 @@ export class SceneOptimizer {
                 const batchedMesh = this.createBatchedMesh(materialData.material, geometryInfoList)
                 if (batchedMesh) {
                     optimizedScene.add(batchedMesh.batchedMesh)
+                    batchedMeshList.push(batchedMesh.batchedMesh)
                 }
               } else {
                   // 创建普通mesh或line
@@ -262,6 +264,7 @@ export class SceneOptimizer {
               }
             }
         }
+        console.log("batchedMeshList:%o", batchedMeshList);
 
         return optimizedScene
     }

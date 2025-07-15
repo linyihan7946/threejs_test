@@ -12,11 +12,16 @@ export class ThreejsUtils {
     private cube!: THREE.Mesh
     private sphere!: THREE.Mesh
     private stats!: Stats
+    private isDragging: boolean = false
+    private sourceTopObject = new THREE.Object3D();
+    private optimizedTopObject = new THREE.Object3D();
 
     constructor(container: HTMLElement) {
         // 创建场景
         this.scene = new THREE.Scene()
         this.scene.background = new THREE.Color(0xf0f0f0)
+        this.scene.add(this.sourceTopObject);
+        this.scene.remove(this.optimizedTopObject);
 
         // 获取窗口尺寸
         const width = window.innerWidth
@@ -44,6 +49,9 @@ export class ThreejsUtils {
         // 创建控制器
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
 
+        // 添加拖动事件监听
+        this.setupControlsEvents()
+
         // 初始化帧率显示
         this.initStats(container)
 
@@ -60,6 +68,33 @@ export class ThreejsUtils {
         this.animate()
     }
 
+    private setupControlsEvents(): void {
+        // 监听控制器开始事件
+        this.controls.addEventListener('start', () => {
+            this.isDragging = true
+            if (this.sourceTopObject.parent) {
+              this.sourceTopObject.parent.remove(this.sourceTopObject);
+            }
+            this.scene.add(this.optimizedTopObject);
+            console.log('视图拖动开始')
+        })
+
+        // 监听控制器结束事件
+        this.controls.addEventListener('end', () => {
+            this.isDragging = false
+            if (this.optimizedTopObject.parent) {
+              this.optimizedTopObject.parent.remove(this.optimizedTopObject);
+            }
+            this.scene.add(this.sourceTopObject);
+            console.log('视图拖动结束')
+        })
+    }
+
+    // 获取拖动状态的公共方法
+    public getIsDragging(): boolean {
+        return this.isDragging
+    }
+
     private initStats(container: HTMLElement): void {
         this.stats = new Stats()
         this.stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
@@ -73,11 +108,92 @@ export class ThreejsUtils {
         container.appendChild(this.stats.dom)
     }
 
+    /**
+     * @Date: 2022-04-29 10:36:24
+     * @description: 完全释放Object3D所有的geometry、texture、material
+     * @return {*}
+     * @author: LinYiHan
+     */
+    private disposeObject3D(obj: THREE.Object3D, delSelf = false): void {
+      if (!obj || obj.traverse === undefined) {
+          return;
+      }
+      // const cssObjectList: CSS2DObject[] = [];
+      // 释放内存
+      obj.traverse(child => {
+          const c = child as THREE.Mesh | THREE.Line;
+          if (!c) {
+              return;
+          }
+          // if (child instanceof CSS2DObject) {
+          //     cssObjectList.push(child);
+          //     return;
+          // }
+          if (c.geometry) {
+              if (c.geometry.dispose) {
+                  c.geometry.dispose();
+              }
+          }
+          if (c.material) {
+              let materialList: THREE.Material[] = [];
+              if (c.material instanceof Array) {
+                  materialList = materialList.concat(c.material);
+              } else {
+                  materialList.push(c.material);
+              }
+
+              materialList.forEach((m: THREE.Material) => {
+                  if (!m) {
+                      return;
+                  }
+                  const keyList: string[] = [
+                      "map",
+                      "lightMap",
+                      "aoMap",
+                      "aoMapIntensity",
+                      "emissiveMap",
+                      "bumpMap",
+                      "normalMap",
+                      "displacementMap",
+                      "roughnessMap",
+                      "metalnessMap",
+                      "alphaMap",
+                      "envMap",
+                  ];
+                  keyList.forEach(key => {
+                      const material = m as unknown as Record<string, unknown>;
+                      if (material[key] && typeof material[key] === 'object' && material[key] !== null && 'dispose' in (material[key] as object)) {
+                          (material[key] as { dispose: () => void }).dispose();
+                      }
+                  });
+                  if (m.dispose) {
+                      m.dispose();
+                  }
+              });
+          }
+      });
+
+      // cssObjectList.reverse().forEach(o => {
+      //     o.remove();
+      // });
+
+      // 移除子物体
+      for (let i: number = obj.children.length - 1; i >= 0; i--) {
+          const c = obj.children[i];
+          obj.remove(c);
+      }
+      obj.children.length = 0;
+
+      // 从父物体删除自身
+      if (delSelf && obj.parent) {
+          obj.parent.remove(obj);
+      }
+    }
+
     private createMeshes(): void {
         const url = "./场景2.gltf";
         GltfLoader.Instance.loadGltf(url).then((gltf) => {
             const object = gltf.scene.clone(true);
-            this.scene.add(object);
 
             const box = new THREE.Box3().setFromObject(object)
             const size = box.getSize(new THREE.Vector3())
@@ -95,12 +211,12 @@ export class ThreejsUtils {
 
             const sceneOptimizer = SceneOptimizer.Instance;
             const newObject = sceneOptimizer.splitMultiMaterialMeshes(object);// 不会破面
-            this.scene.remove(object);
-            this.scene.add(newObject);
+            this.disposeObject3D(this.sourceTopObject, false);
+            this.sourceTopObject.add(newObject);
 
+            this.disposeObject3D(this.optimizedTopObject, true);
             const optimizedScene = sceneOptimizer.optimizeScene(newObject);
-            this.scene.remove(newObject);
-            this.scene.add(optimizedScene);
+            this.optimizedTopObject.add(optimizedScene);
         })
     }
 
