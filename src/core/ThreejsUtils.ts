@@ -3,6 +3,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GltfLoader } from './GltfLoader'
 import Stats from 'stats.js'
 import { SceneOptimizer } from './SceneOptimizer'
+// 高斯喷溅
+import { Viewer } from '@mkkellogg/gaussian-splats-3d'
 
 export class ThreejsUtils {
     private scene: THREE.Scene = new THREE.Scene()
@@ -15,6 +17,8 @@ export class ThreejsUtils {
     private isDragging: boolean = false
     private sourceTopObject = new THREE.Object3D();
     private optimizedTopObject = new THREE.Object3D();
+    // 在 ThreejsUtils 构造函数中
+    private viewer!: Viewer;
 
     constructor(container: HTMLElement) {
         // 创建场景
@@ -45,6 +49,16 @@ export class ThreejsUtils {
         this.renderer.domElement.style.zIndex = '1'
 
         container.appendChild(this.renderer.domElement)
+
+        this.viewer = new Viewer({
+          cameraUp: [0, -1, -0.54],
+          initialCameraPosition: [-3.15634, -0.16946, -0.51552],
+          initialCameraLookAt: [1.52976, 2.27776, 1.65898],
+          sphericalHarmonicsDegree: 2,
+          threeScene: this.scene,
+          threeCamera: this.camera,
+          threeRenderer: this.renderer,
+        });
 
         // 创建控制器
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
@@ -191,33 +205,39 @@ export class ThreejsUtils {
     }
 
     private createMeshes(): void {
-        const url = "./场景2.gltf";
-        GltfLoader.Instance.loadGltf(url).then((gltf) => {
-            const object = gltf.scene.clone(true);
+      const url = "./garden_high.ksplat";
+      // const url = "https://linyihan-1312729243.cos.ap-guangzhou.myqcloud.com/garden_high.ksplat";
+      this.loadGaussianSplatting(url);
+    }
 
-            const box = new THREE.Box3().setFromObject(object)
-            const size = box.getSize(new THREE.Vector3())
-            const center = box.getCenter(new THREE.Vector3())
-            const moveMatrix = new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z)
-            object.applyMatrix4(moveMatrix)
-            box.setFromObject(object); box.getCenter(center); box.getSize(size);
+    private addGltf(): void {
+      const url = "./场景2.gltf";
+      GltfLoader.Instance.loadGltf(url).then((gltf) => {
+          const object = gltf.scene.clone(true);
 
-            const maxDimension = Math.max(size.x, size.y, size.z)
-            const target = new THREE.Vector3(center.x, center.y, center.z);
-            const position = target.clone().add(new THREE.Vector3(maxDimension/2, maxDimension/2, -maxDimension/2));
-            this.camera.position.copy(position)
-            this.camera.up.set(0, 1, 0)
-            this.camera.lookAt(target)
+          const box = new THREE.Box3().setFromObject(object)
+          const size = box.getSize(new THREE.Vector3())
+          const center = box.getCenter(new THREE.Vector3())
+          const moveMatrix = new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z)
+          object.applyMatrix4(moveMatrix)
+          box.setFromObject(object); box.getCenter(center); box.getSize(size);
 
-            const sceneOptimizer = SceneOptimizer.Instance;
-            const newObject = sceneOptimizer.splitMultiMaterialMeshes(object);// 不会破面
-            this.disposeObject3D(this.sourceTopObject, false);
-            this.sourceTopObject.add(newObject);
+          const maxDimension = Math.max(size.x, size.y, size.z)
+          const target = new THREE.Vector3(center.x, center.y, center.z);
+          const position = target.clone().add(new THREE.Vector3(maxDimension/2, maxDimension/2, -maxDimension/2));
+          this.camera.position.copy(position)
+          this.camera.up.set(0, 1, 0)
+          this.camera.lookAt(target)
 
-            this.disposeObject3D(this.optimizedTopObject, true);
-            const optimizedScene = sceneOptimizer.optimizeScene(newObject);
-            this.optimizedTopObject.add(optimizedScene);
-        })
+          const sceneOptimizer = SceneOptimizer.Instance;
+          const newObject = sceneOptimizer.splitMultiMaterialMeshes(object);// 不会破面
+          this.disposeObject3D(this.sourceTopObject, false);
+          this.sourceTopObject.add(newObject);
+
+          this.disposeObject3D(this.optimizedTopObject, true);
+          const optimizedScene = sceneOptimizer.optimizeScene(newObject);
+          this.optimizedTopObject.add(optimizedScene);
+      })
     }
 
     private addLights(): void {
@@ -273,5 +293,14 @@ export class ThreejsUtils {
     public dispose(): void {
         window.removeEventListener('resize', this.onWindowResize.bind(this))
         this.renderer.dispose()
+    }
+
+    // 添加加载方法
+    public loadGaussianSplatting(url: string): void {
+      this.viewer.addSplatScene(url, {
+        progressiveLoad: false
+      }).then(() => {
+        this.viewer.start()
+      })
     }
 }
