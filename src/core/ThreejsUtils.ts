@@ -205,7 +205,9 @@ export class ThreejsUtils {
     }
 
     private createMeshes(): void {
-      const url = "./garden_high.ksplat";
+      // const url = "./room.ply";// 效果不行
+      const url = "./chair.ply";// 有鬼影
+      // const url = "./garden_high.ksplat";
       // const url = "https://linyihan-1312729243.cos.ap-guangzhou.myqcloud.com/garden_high.ksplat";
       this.loadGaussianSplatting(url);
     }
