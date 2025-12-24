@@ -20,6 +20,8 @@ export class ThreejsUtils {
     // 在 ThreejsUtils 构造函数中
     private viewer!: Viewer;
 
+    private isUseOptimized = false;
+
     constructor(container: HTMLElement) {
         // 创建场景
         this.scene = new THREE.Scene()
@@ -86,20 +88,24 @@ export class ThreejsUtils {
         // 监听控制器开始事件
         this.controls.addEventListener('start', () => {
             this.isDragging = true
-            if (this.sourceTopObject.parent) {
-              this.sourceTopObject.parent.remove(this.sourceTopObject);
+            if (this.isUseOptimized) {
+              if (this.sourceTopObject.parent) {
+                this.sourceTopObject.parent.remove(this.sourceTopObject);
+              }
+              this.scene.add(this.optimizedTopObject);
             }
-            this.scene.add(this.optimizedTopObject);
             console.log('视图拖动开始')
         })
 
         // 监听控制器结束事件
         this.controls.addEventListener('end', () => {
             this.isDragging = false
-            if (this.optimizedTopObject.parent) {
-              this.optimizedTopObject.parent.remove(this.optimizedTopObject);
+            if (this.isUseOptimized) {
+              if (this.optimizedTopObject.parent) {
+                this.optimizedTopObject.parent.remove(this.optimizedTopObject);
+              }
+              this.scene.add(this.sourceTopObject);
             }
-            this.scene.add(this.sourceTopObject);
             console.log('视图拖动结束')
         })
     }
@@ -205,15 +211,24 @@ export class ThreejsUtils {
     }
 
     private createMeshes(): void {
+      // const url = "./37room3.ply";
+      // const url = "./MT20250416-100556_ID611_OK.ply";// 37楼茶水间（显示不出来）
       // const url = "./room.ply";// 效果不行
-      const url = "./chair.ply";// 有鬼影
+      // const url = "./chair.ply";// 有鬼影
       // const url = "./garden_high.ksplat";
       // const url = "https://linyihan-1312729243.cos.ap-guangzhou.myqcloud.com/garden_high.ksplat";
-      this.loadGaussianSplatting(url);
+      // this.loadGaussianSplatting(url);
+
+
+      this.addGltf();
     }
 
+
+
+
+
     private addGltf(): void {
-      const url = "./场景2.gltf";
+      const url = "./场景2-无压缩.glb";
       GltfLoader.Instance.loadGltf(url).then((gltf) => {
           const object = gltf.scene.clone(true);
 
@@ -231,14 +246,18 @@ export class ThreejsUtils {
           this.camera.up.set(0, 1, 0)
           this.camera.lookAt(target)
 
-          const sceneOptimizer = SceneOptimizer.Instance;
-          const newObject = sceneOptimizer.splitMultiMaterialMeshes(object);// 不会破面
-          this.disposeObject3D(this.sourceTopObject, false);
-          this.sourceTopObject.add(newObject);
+          if (this.isUseOptimized) {
+            const sceneOptimizer = SceneOptimizer.Instance;
+            const newObject = sceneOptimizer.splitMultiMaterialMeshes(object);// 不会破面
+            this.disposeObject3D(this.sourceTopObject, false);
+            this.sourceTopObject.add(newObject);
 
-          this.disposeObject3D(this.optimizedTopObject, true);
-          const optimizedScene = sceneOptimizer.optimizeScene(newObject);
-          this.optimizedTopObject.add(optimizedScene);
+            this.disposeObject3D(this.optimizedTopObject, true);
+            const optimizedScene = sceneOptimizer.optimizeScene(newObject);
+            this.optimizedTopObject.add(optimizedScene);
+          } else {
+            this.scene.add(object);
+          }
       })
     }
 
