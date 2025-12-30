@@ -49,6 +49,10 @@ export class ThreejsUtils {
         this.renderer.setPixelRatio(window.devicePixelRatio)
         this.renderer.shadowMap.enabled = true
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.0;
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+
 
         // 设置 canvas 样式为全屏
         this.renderer.domElement.style.position = 'fixed'
@@ -289,13 +293,24 @@ export class ThreejsUtils {
         const ambientLight = LightGenerator.createAmbientLight(0xffffff, 0.3)
         this.scene.add(ambientLight)
 
+        // 添加矩形光
+        const rectAreaLight = LightGenerator.createRectAreaLight(
+          0xffffff,
+          100,
+          1000,
+          1000,
+          new THREE.Vector3(5000, 5000, 5000),
+          new THREE.Vector3(0, 0, 0)
+        )
+        this.scene.add(rectAreaLight)
+
         // // 添加点光源
         // const pointLight = LightGenerator.createPointLight(0xffffff, 2, 5000, 1, new THREE.Vector3(2000, 2000, 2000))
         // this.scene.add(pointLight)
 
-        // 添加方向光
-        const directionalLight = LightGenerator.createDirectionalLight(0xffffff, 1, new THREE.Vector3(0, 0, 5000), new THREE.Vector3(0, 0, 0))
-        this.scene.add(directionalLight)
+        // // 添加方向光
+        // const directionalLight = LightGenerator.createDirectionalLight(0xffffff, 1, new THREE.Vector3(0, 0, 5000), new THREE.Vector3(0, 0, 0))
+        // this.scene.add(directionalLight)
 
         // const light = LightGenerator.createHemisphereLight(0xffffff, 0x000000, Math.PI, new THREE.Vector3(0, 1, 0))
         // this.scene.add(light)
@@ -345,8 +360,8 @@ export class ThreejsUtils {
     private animate = (currentTime: number = 0): void => {
         requestAnimationFrame(this.animate)
 
-        // const deltaTime = currentTime - this.lastFrameTime
-        // this.lastFrameTime = currentTime
+        const deltaTime = currentTime - this.lastFrameTime
+        this.lastFrameTime = currentTime
 
         // 开始帧率统计
         this.stats.begin()
@@ -354,10 +369,10 @@ export class ThreejsUtils {
         this.controls.update()
 
         // 光线追踪
-        // if (this.pathTracerManager.isEnabled()) {
-        //   this.updatePathTracerState(deltaTime)
-        //   this.pathTracerManager.update()
-        // }
+        if (this.pathTracerManager.isEnabled()) {
+          this.updatePathTracerState(deltaTime)
+          this.pathTracerManager.update()
+        }
 
 
         this.renderer.render(this.scene, this.camera)

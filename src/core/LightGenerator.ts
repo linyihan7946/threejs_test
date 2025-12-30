@@ -51,4 +51,19 @@ export class LightGenerator {
     light.target.position.copy(target)
     return light
   }
+
+  static createRectAreaLight(
+    color: number = 0xffffff,
+    intensity: number = 1,
+    width: number = 1,
+    height: number = 1,
+    position: THREE.Vector3 = new THREE.Vector3(0, 0, 0),
+    target: THREE.Vector3 = new THREE.Vector3(0, 0, 0)
+  ): THREE.RectAreaLight {
+    const light = new THREE.RectAreaLight(color, intensity, width, height)
+    light.position.copy(position)
+    light.lookAt(target)
+    light.castShadow = true
+    return light
+  }
 }
