@@ -4,6 +4,7 @@ import { GltfLoader } from './GltfLoader'
 import Stats from 'stats.js'
 import { SceneOptimizer } from './SceneOptimizer'
 import { MeshGenerator } from './MeshGenerator'
+import { LightGenerator } from './LightGenerator'
 // 高斯喷溅
 // import { Viewer } from '@mkkellogg/gaussian-splats-3d'
 
@@ -272,18 +273,15 @@ export class ThreejsUtils {
 
     private addLights(): void {
         // // 添加环境光
-        // const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+        // const ambientLight = LightGenerator.createAmbientLight(0xffffff, 0.5)
         // this.scene.add(ambientLight)
 
         // // 添加方向光
-        // const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
-        // directionalLight.position.set(5, 5, 5)
+        // const directionalLight = LightGenerator.createDirectionalLight(0xffffff, 1, new THREE.Vector3(5, 5, 5))
         // this.scene.add(directionalLight)
 
-
-        const light = new THREE.HemisphereLight(0xffffff, 0x000000, Math.PI);
-        light.position.set(0, 1, 0);// 方向是从左到右，有点从前到后
-        this.scene.add(light);
+        const light = LightGenerator.createHemisphereLight(0xffffff, 0x000000, Math.PI, new THREE.Vector3(0, 1, 0))
+        this.scene.add(light)
     }
 
     private onWindowResize(): void {
