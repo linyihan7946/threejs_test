@@ -4,9 +4,14 @@ import { WebGLPathTracer } from 'three-gpu-pathtracer';
 export class PathTracerManager {
     public pathTracer: WebGLPathTracer;
     private renderer: THREE.WebGLRenderer;
+    private isPathTracingEnabled: boolean = false;
+    private scene: THREE.Scene;
+    private camera: THREE.PerspectiveCamera;
 
     constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
         this.renderer = renderer;
+        this.scene = scene;
+        this.camera = camera;
 
         // 1. 初始化最新的 WebGLPathTracer
         this.pathTracer = new WebGLPathTracer(renderer);
@@ -31,6 +36,39 @@ export class PathTracerManager {
         if (config.renderScale !== undefined) this.pathTracer.renderScale = config.renderScale;
         if (config.tiles !== undefined) this.pathTracer.tiles.copy(config.tiles);
         this.pathTracer.reset();
+    }
+
+    /**
+     * 启用光线追踪
+     */
+    public enable(): void {
+        this.isPathTracingEnabled = true;
+    }
+
+    /**
+     * 禁用光线追踪
+     */
+    public disable(): void {
+        this.isPathTracingEnabled = false;
+        this.pathTracer.reset();
+    }
+
+    /**
+     * 切换光线追踪状态
+     */
+    public toggle(): void {
+        if (this.isPathTracingEnabled) {
+            this.disable();
+        } else {
+            this.enable();
+        }
+    }
+
+    /**
+     * 检查光线追踪是否启用
+     */
+    public isEnabled(): boolean {
+        return this.isPathTracingEnabled;
     }
 
     /**

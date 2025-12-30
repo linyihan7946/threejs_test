@@ -5,6 +5,7 @@ import Stats from 'stats.js'
 import { SceneOptimizer } from './SceneOptimizer'
 import { MeshGenerator } from './MeshGenerator'
 import { LightGenerator } from './LightGenerator'
+import { PathTracerManager } from './PathTracerManager'
 // 高斯喷溅
 // import { Viewer } from '@mkkellogg/gaussian-splats-3d'
 
@@ -21,6 +22,11 @@ export class ThreejsUtils {
     // private viewer!: Viewer;
 
     private isUseOptimized = true;
+    private pathTracerManager!: PathTracerManager;
+    private cameraStationaryTime: number = 0;
+    private cameraStationaryThreshold: number = 500;
+    private lastCameraPosition: THREE.Vector3 = new THREE.Vector3();
+    private lastCameraQuaternion: THREE.Quaternion = new THREE.Quaternion();
 
     constructor(container: HTMLElement) {
         // 创建场景
@@ -41,6 +47,8 @@ export class ThreejsUtils {
         this.renderer = new THREE.WebGLRenderer({ antialias: true })
         this.renderer.setSize(width, height)
         this.renderer.setPixelRatio(window.devicePixelRatio)
+        this.renderer.shadowMap.enabled = true
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
         // 设置 canvas 样式为全屏
         this.renderer.domElement.style.position = 'fixed'
@@ -77,6 +85,9 @@ export class ThreejsUtils {
         // 添加光源
         this.addLights()
 
+        // 初始化光线追踪管理器
+        this.initPathTracer()
+
         // 监听窗口大小变化
         window.addEventListener('resize', this.onWindowResize.bind(this))
 
@@ -88,6 +99,7 @@ export class ThreejsUtils {
         // 监听控制器开始事件
         this.controls.addEventListener('start', () => {
             this.isDragging = true
+            this.pathTracerManager.disable()
             if (this.isUseOptimized) {
               if (this.sourceTopObject.parent) {
                 this.sourceTopObject.parent.remove(this.sourceTopObject);
@@ -100,6 +112,7 @@ export class ThreejsUtils {
         // 监听控制器结束事件
         this.controls.addEventListener('end', () => {
             this.isDragging = false
+            this.cameraStationaryTime = 0
             if (this.isUseOptimized) {
               if (this.optimizedTopObject.parent) {
                 this.optimizedTopObject.parent.remove(this.optimizedTopObject);
@@ -273,8 +286,12 @@ export class ThreejsUtils {
 
     private addLights(): void {
         // 添加环境光
-        const ambientLight = LightGenerator.createAmbientLight(0xffffff, 0.5)
+        const ambientLight = LightGenerator.createAmbientLight(0xffffff, 0.3)
         this.scene.add(ambientLight)
+
+        // 添加点光源
+        const pointLight = LightGenerator.createPointLight(0xffffff, 2, 5000, 1, new THREE.Vector3(2000, 2000, 2000))
+        this.scene.add(pointLight)
 
         // // 添加方向光
         // const directionalLight = LightGenerator.createDirectionalLight(0xffffff, 1, new THREE.Vector3(5, 5, 5))
@@ -282,6 +299,34 @@ export class ThreejsUtils {
 
         // const light = LightGenerator.createHemisphereLight(0xffffff, 0x000000, Math.PI, new THREE.Vector3(0, 1, 0))
         // this.scene.add(light)
+    }
+
+    private initPathTracer(): void {
+        this.pathTracerManager = new PathTracerManager(this.renderer, this.scene, this.camera)
+        this.pathTracerManager.setConfig({
+            bounces: 3,
+            renderScale: 1.0,
+            tiles: new THREE.Vector2(2, 2)
+        })
+        this.lastCameraPosition.copy(this.camera.position)
+        this.lastCameraQuaternion.copy(this.camera.quaternion)
+    }
+
+    private updatePathTracerState(deltaTime: number): void {
+        const positionChanged = !this.camera.position.equals(this.lastCameraPosition)
+        const rotationChanged = !this.camera.quaternion.equals(this.lastCameraQuaternion)
+
+        if (positionChanged || rotationChanged) {
+            this.cameraStationaryTime = 0
+            this.pathTracerManager.disable()
+            this.lastCameraPosition.copy(this.camera.position)
+            this.lastCameraQuaternion.copy(this.camera.quaternion)
+        } else {
+            this.cameraStationaryTime += deltaTime
+            if (this.cameraStationaryTime >= this.cameraStationaryThreshold) {
+                this.pathTracerManager.enable()
+            }
+        }
     }
 
     private onWindowResize(): void {
@@ -294,14 +339,29 @@ export class ThreejsUtils {
         this.renderer.setPixelRatio(window.devicePixelRatio)
     }
 
-    private animate = (): void => {
+    private lastFrameTime: number = 0;
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private animate = (currentTime: number = 0): void => {
         requestAnimationFrame(this.animate)
+
+        // const deltaTime = currentTime - this.lastFrameTime
+        // this.lastFrameTime = currentTime
 
         // 开始帧率统计
         this.stats.begin()
 
         this.controls.update()
+
+        // 光线追踪
+        // if (this.pathTracerManager.isEnabled()) {
+        //   this.updatePathTracerState(deltaTime)
+        //   this.pathTracerManager.update()
+        // }
+
+
         this.renderer.render(this.scene, this.camera)
+
 
         // 结束帧率统计
         this.stats.end()

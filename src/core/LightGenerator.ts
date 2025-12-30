@@ -20,6 +20,7 @@ export class LightGenerator {
   static createPointLight(color: number = 0xffffff, intensity: number = 1, distance: number = 0, decay: number = 1, position: THREE.Vector3 = new THREE.Vector3(0, 0, 0)): THREE.PointLight {
     const light = new THREE.PointLight(color, intensity, distance, decay)
     light.position.copy(position)
+    light.castShadow = true
     return light
   }
 
