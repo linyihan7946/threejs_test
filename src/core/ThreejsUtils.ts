@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GltfLoader } from './GltfLoader'
 import Stats from 'stats.js'
 import { SceneOptimizer } from './SceneOptimizer'
+import { MeshGenerator } from './MeshGenerator'
 // 高斯喷溅
 // import { Viewer } from '@mkkellogg/gaussian-splats-3d'
 
@@ -11,8 +12,6 @@ export class ThreejsUtils {
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera()
     private renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer()
     private controls!: OrbitControls
-    private cube!: THREE.Mesh
-    private sphere!: THREE.Mesh
     private stats!: Stats
     private isDragging: boolean = false
     private sourceTopObject = new THREE.Object3D();
@@ -220,22 +219,22 @@ export class ThreejsUtils {
       // this.loadGaussianSplatting(url);
       // this.addGltf();
 
-      const length = 1000;
-      const boxGeometry = new THREE.BoxGeometry(length, length, length);
-      const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-      const boxMesh = new THREE.Mesh(boxGeometry, material);
-      const matrix = new THREE.Matrix4().makeTranslation(0, 0, length/2);
-      boxMesh.applyMatrix4(matrix);
-      this.scene.add(boxMesh);
+      // 创建地面
+      const groundMesh = MeshGenerator.createPlane(10000, 10000, 0xffffff)
+      this.scene.add(groundMesh)
+
+      // 创建box
+      const boxMesh = MeshGenerator.createBox(1000, 0xff0000)
+      this.scene.add(boxMesh)
+      const matrix = new THREE.Matrix4().makeTranslation(0, 0, 1000)
+      boxMesh.applyMatrix4(matrix)
+
+      // 移动相机
       const position = new THREE.Vector3(0, -1500, 500);
       this.camera.position.copy(position)
       this.camera.up.set(0, 1, 0)
-      this.camera.lookAt(new THREE.Vector3(0, 0, 500))
+      this.camera.lookAt(new THREE.Vector3(0, 0, 0))
     }
-
-
-
-
 
     private addGltf(): void {
       const url = "./场景2-无压缩.glb";
