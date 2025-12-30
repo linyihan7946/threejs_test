@@ -272,16 +272,16 @@ export class ThreejsUtils {
     }
 
     private addLights(): void {
-        // // 添加环境光
-        // const ambientLight = LightGenerator.createAmbientLight(0xffffff, 0.5)
-        // this.scene.add(ambientLight)
+        // 添加环境光
+        const ambientLight = LightGenerator.createAmbientLight(0xffffff, 0.5)
+        this.scene.add(ambientLight)
 
         // // 添加方向光
         // const directionalLight = LightGenerator.createDirectionalLight(0xffffff, 1, new THREE.Vector3(5, 5, 5))
         // this.scene.add(directionalLight)
 
-        const light = LightGenerator.createHemisphereLight(0xffffff, 0x000000, Math.PI, new THREE.Vector3(0, 1, 0))
-        this.scene.add(light)
+        // const light = LightGenerator.createHemisphereLight(0xffffff, 0x000000, Math.PI, new THREE.Vector3(0, 1, 0))
+        // this.scene.add(light)
     }
 
     private onWindowResize(): void {
