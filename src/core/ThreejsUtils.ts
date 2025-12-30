@@ -20,7 +20,7 @@ export class ThreejsUtils {
     // 在 ThreejsUtils 构造函数中
     private viewer!: Viewer;
 
-    private isUseOptimized = false;
+    private isUseOptimized = true;
 
     constructor(container: HTMLElement) {
         // 创建场景
@@ -218,9 +218,19 @@ export class ThreejsUtils {
       // const url = "./garden_high.ksplat";
       // const url = "https://linyihan-1312729243.cos.ap-guangzhou.myqcloud.com/garden_high.ksplat";
       // this.loadGaussianSplatting(url);
+      // this.addGltf();
 
-
-      this.addGltf();
+      const length = 1000;
+      const boxGeometry = new THREE.BoxGeometry(length, length, length);
+      const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+      const boxMesh = new THREE.Mesh(boxGeometry, material);
+      const matrix = new THREE.Matrix4().makeTranslation(0, 0, length/2);
+      boxMesh.applyMatrix4(matrix);
+      this.scene.add(boxMesh);
+      const position = new THREE.Vector3(0, -4000, 500);
+      this.camera.position.copy(position)
+      this.camera.up.set(0, 1, 0)
+      this.camera.lookAt(new THREE.Vector3(0, 0, 500))
     }
 
 
