@@ -4,7 +4,7 @@ import { GltfLoader } from './GltfLoader'
 import Stats from 'stats.js'
 import { SceneOptimizer } from './SceneOptimizer'
 // 高斯喷溅
-import { Viewer } from '@mkkellogg/gaussian-splats-3d'
+// import { Viewer } from '@mkkellogg/gaussian-splats-3d'
 
 export class ThreejsUtils {
     private scene: THREE.Scene = new THREE.Scene()
@@ -18,7 +18,7 @@ export class ThreejsUtils {
     private sourceTopObject = new THREE.Object3D();
     private optimizedTopObject = new THREE.Object3D();
     // 在 ThreejsUtils 构造函数中
-    private viewer!: Viewer;
+    // private viewer!: Viewer;
 
     private isUseOptimized = true;
 
@@ -52,15 +52,15 @@ export class ThreejsUtils {
 
         container.appendChild(this.renderer.domElement)
 
-        this.viewer = new Viewer({
-          cameraUp: [0, -1, -0.54],
-          initialCameraPosition: [-3.15634, -0.16946, -0.51552],
-          initialCameraLookAt: [1.52976, 2.27776, 1.65898],
-          sphericalHarmonicsDegree: 2,
-          threeScene: this.scene,
-          threeCamera: this.camera,
-          threeRenderer: this.renderer,
-        });
+        // this.viewer = new Viewer({
+        //   cameraUp: [0, -1, -0.54],
+        //   initialCameraPosition: [-3.15634, -0.16946, -0.51552],
+        //   initialCameraLookAt: [1.52976, 2.27776, 1.65898],
+        //   sphericalHarmonicsDegree: 2,
+        //   threeScene: this.scene,
+        //   threeCamera: this.camera,
+        //   threeRenderer: this.renderer,
+        // });
 
         // 创建控制器
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
@@ -227,7 +227,7 @@ export class ThreejsUtils {
       const matrix = new THREE.Matrix4().makeTranslation(0, 0, length/2);
       boxMesh.applyMatrix4(matrix);
       this.scene.add(boxMesh);
-      const position = new THREE.Vector3(0, -4000, 500);
+      const position = new THREE.Vector3(0, -1500, 500);
       this.camera.position.copy(position)
       this.camera.up.set(0, 1, 0)
       this.camera.lookAt(new THREE.Vector3(0, 0, 500))
@@ -303,11 +303,6 @@ export class ThreejsUtils {
         // 开始帧率统计
         this.stats.begin()
 
-        // 旋转物体
-        // this.cube.rotation.x += 0.01
-        // this.cube.rotation.y += 0.01
-        // this.sphere.rotation.y += 0.01
-
         this.controls.update()
         this.renderer.render(this.scene, this.camera)
 
@@ -328,10 +323,12 @@ export class ThreejsUtils {
 
     // 添加加载方法
     public loadGaussianSplatting(url: string): void {
-      this.viewer.addSplatScene(url, {
-        progressiveLoad: false
-      }).then(() => {
-        this.viewer.start()
-      })
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const url1 = url;
+      // this.viewer.addSplatScene(url, {
+      //   progressiveLoad: false
+      // }).then(() => {
+      //   this.viewer.start()
+      // })
     }
 }
