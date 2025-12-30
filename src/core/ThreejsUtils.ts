@@ -289,13 +289,13 @@ export class ThreejsUtils {
         const ambientLight = LightGenerator.createAmbientLight(0xffffff, 0.3)
         this.scene.add(ambientLight)
 
-        // 添加点光源
-        const pointLight = LightGenerator.createPointLight(0xffffff, 2, 5000, 1, new THREE.Vector3(2000, 2000, 2000))
-        this.scene.add(pointLight)
+        // // 添加点光源
+        // const pointLight = LightGenerator.createPointLight(0xffffff, 2, 5000, 1, new THREE.Vector3(2000, 2000, 2000))
+        // this.scene.add(pointLight)
 
-        // // 添加方向光
-        // const directionalLight = LightGenerator.createDirectionalLight(0xffffff, 1, new THREE.Vector3(5, 5, 5))
-        // this.scene.add(directionalLight)
+        // 添加方向光
+        const directionalLight = LightGenerator.createDirectionalLight(0xffffff, 1, new THREE.Vector3(0, 0, 5000), new THREE.Vector3(0, 0, 0))
+        this.scene.add(directionalLight)
 
         // const light = LightGenerator.createHemisphereLight(0xffffff, 0x000000, Math.PI, new THREE.Vector3(0, 1, 0))
         // this.scene.add(light)

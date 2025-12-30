@@ -5,9 +5,30 @@ export class LightGenerator {
     return new THREE.AmbientLight(color, intensity)
   }
 
-  static createDirectionalLight(color: number = 0xffffff, intensity: number = 1, position: THREE.Vector3 = new THREE.Vector3(5, 5, 5)): THREE.DirectionalLight {
+  static createDirectionalLight(
+    color: number = 0xffffff,
+    intensity: number = 1,
+    position: THREE.Vector3 = new THREE.Vector3(5, 5, 5),
+    target: THREE.Vector3 = new THREE.Vector3(0, 0, 0),
+  ): THREE.DirectionalLight {
     const light = new THREE.DirectionalLight(color, intensity)
     light.position.copy(position)
+    light.target.position.copy(target); // 光源目标指向原点
+    light.castShadow = true
+    // 调整阴影相机范围以覆盖你的 10000 单位地面
+    const d = 5000;
+    light.shadow.camera.left = -d;
+    light.shadow.camera.right = d;
+    light.shadow.camera.top = d;
+    light.shadow.camera.bottom = -d;
+    light.shadow.camera.near = 1;
+    light.shadow.camera.far = 10000; // 必须大于光照到地面的距离
+
+    // 增加阴影贴图分辨率（默认 512，针对大场景建议增加）
+    light.shadow.mapSize.width = 2048;
+    light.shadow.mapSize.height = 2048;
+
+    light.shadow.bias = -0.001;
     return light
   }
 
