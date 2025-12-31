@@ -145,88 +145,6 @@ export class ThreejsUtils {
         container.appendChild(this.stats.dom)
     }
 
-    /**
-     * @Date: 2022-04-29 10:36:24
-     * @description: 完全释放Object3D所有的geometry、texture、material
-     * @return {*}
-     * @author: LinYiHan
-     */
-    private disposeObject3D(obj: THREE.Object3D, delSelf = false): void {
-      if (!obj || obj.traverse === undefined) {
-          return;
-      }
-      // const cssObjectList: CSS2DObject[] = [];
-      // 释放内存
-      obj.traverse(child => {
-          const c = child as THREE.Mesh | THREE.Line;
-          if (!c) {
-              return;
-          }
-          // if (child instanceof CSS2DObject) {
-          //     cssObjectList.push(child);
-          //     return;
-          // }
-          if (c.geometry) {
-              if (c.geometry.dispose) {
-                  c.geometry.dispose();
-              }
-          }
-          if (c.material) {
-              let materialList: THREE.Material[] = [];
-              if (c.material instanceof Array) {
-                  materialList = materialList.concat(c.material);
-              } else {
-                  materialList.push(c.material);
-              }
-
-              materialList.forEach((m: THREE.Material) => {
-                  if (!m) {
-                      return;
-                  }
-                  const keyList: string[] = [
-                      "map",
-                      "lightMap",
-                      "aoMap",
-                      "aoMapIntensity",
-                      "emissiveMap",
-                      "bumpMap",
-                      "normalMap",
-                      "displacementMap",
-                      "roughnessMap",
-                      "metalnessMap",
-                      "alphaMap",
-                      "envMap",
-                  ];
-                  keyList.forEach(key => {
-                      const material = m as unknown as Record<string, unknown>;
-                      if (material[key] && typeof material[key] === 'object' && material[key] !== null && 'dispose' in (material[key] as object)) {
-                          (material[key] as { dispose: () => void }).dispose();
-                      }
-                  });
-                  if (m.dispose) {
-                      m.dispose();
-                  }
-              });
-          }
-      });
-
-      // cssObjectList.reverse().forEach(o => {
-      //     o.remove();
-      // });
-
-      // 移除子物体
-      for (let i: number = obj.children.length - 1; i >= 0; i--) {
-          const c = obj.children[i];
-          obj.remove(c);
-      }
-      obj.children.length = 0;
-
-      // 从父物体删除自身
-      if (delSelf && obj.parent) {
-          obj.parent.remove(obj);
-      }
-    }
-
     private createMeshes(): void {
       // const url = "./37room3.ply";
       // const url = "./MT20250416-100556_ID611_OK.ply";// 37楼茶水间（显示不出来）
@@ -241,11 +159,17 @@ export class ThreejsUtils {
       const groundMesh = MeshGenerator.createPlane(10000, 10000, 0xffffff)
       this.scene.add(groundMesh)
 
-      // 创建box
-      const boxMesh = MeshGenerator.createBox(1000, 0xff0000)
-      this.scene.add(boxMesh)
+      // // 创建box
+      // const boxMesh = MeshGenerator.createBox(1000, 0xff0000)
+      // this.scene.add(boxMesh)
+      // const matrix = new THREE.Matrix4().makeTranslation(0, 0, 1000)
+      // boxMesh.applyMatrix4(matrix)
+
+      // 创建球体
+      const sphereMesh = MeshGenerator.createSphere(500, 0xff0000)
+      this.scene.add(sphereMesh)
       const matrix = new THREE.Matrix4().makeTranslation(0, 0, 1000)
-      boxMesh.applyMatrix4(matrix)
+      sphereMesh.applyMatrix4(matrix)
 
       // 移动相机
       const position = new THREE.Vector3(0, -1500, 500);
@@ -276,10 +200,10 @@ export class ThreejsUtils {
           if (this.isUseOptimized) {
             const sceneOptimizer = SceneOptimizer.Instance;
             const newObject = sceneOptimizer.splitMultiMaterialMeshes(object);// 不会破面
-            this.disposeObject3D(this.sourceTopObject, false);
+            MeshGenerator.disposeObject3D(this.sourceTopObject, false);
             this.sourceTopObject.add(newObject);
 
-            this.disposeObject3D(this.optimizedTopObject, true);
+            MeshGenerator.disposeObject3D(this.optimizedTopObject, true);
             const optimizedScene = sceneOptimizer.optimizeScene(newObject);
             this.optimizedTopObject.add(optimizedScene);
           } else {
