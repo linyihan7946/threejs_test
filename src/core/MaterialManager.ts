@@ -10,6 +10,9 @@ export interface MaterialConfig {
   metalness?: number
   emissive?: number
   emissiveIntensity?: number
+  transmission?: number
+  thickness?: number
+  ior?: number
   map?: THREE.Texture
   normalMap?: THREE.Texture
   roughnessMap?: THREE.Texture

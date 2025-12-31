@@ -1,43 +1,5 @@
 import * as THREE from 'three'
-import { MaterialManager } from './MaterialManager'
-import { GeometryManager } from './GeometryManager'
-
 export class MeshGenerator {
-  static createBox(size: number = 1000, color: number = 0x00ff00): THREE.Mesh {
-    const boxGeometry = GeometryManager.createBoxGeometry({ width: size, height: size, depth: size })
-    const material = MaterialManager.createStandardMaterial({ color: color })
-    const boxMesh = new THREE.Mesh(boxGeometry, material)
-    boxMesh.receiveShadow = true
-    boxMesh.castShadow = true
-    return boxMesh
-  }
-
-  static createSphere(radius: number = 500, color: number = 0xff0000): THREE.Mesh {
-    const sphereGeometry = GeometryManager.createSphereGeometry({ radius, segments: 32 })
-    const material = MaterialManager.createStandardMaterial({ color: color })
-    const sphereMesh = new THREE.Mesh(sphereGeometry, material)
-    sphereMesh.receiveShadow = true
-    sphereMesh.castShadow = true
-    return sphereMesh
-  }
-
-  /**
-   * 创建球体几何体
-   * @param radius
-   * @returns
-   */
-  static createSphereGeometry(radius: number = 500): THREE.BufferGeometry {
-    return GeometryManager.createSphereGeometry({ radius, segments: 32 })
-  }
-
-  static createPlane(width: number = 1000, height: number = 1000, color: number = 0x0000ff): THREE.Mesh {
-    const planeGeometry = GeometryManager.createPlaneGeometry({ width, height })
-    const material = MaterialManager.createStandardMaterial({ color: color, side: THREE.DoubleSide })
-    const planeMesh = new THREE.Mesh(planeGeometry, material)
-    planeMesh.receiveShadow = true
-    planeMesh.castShadow = true
-    return planeMesh
-  }
 
   /**
    * @Date: 2022-04-29 10:36:24

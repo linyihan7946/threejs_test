@@ -6,6 +6,8 @@ import { SceneOptimizer } from './SceneOptimizer'
 import { MeshGenerator } from './MeshGenerator'
 import { LightGenerator } from './LightGenerator'
 import { PathTracerManager } from './PathTracerManager'
+import { GeometryManager } from './GeometryManager'
+import { MaterialManager } from './MaterialManager'
 // 高斯喷溅
 // import { Viewer } from '@mkkellogg/gaussian-splats-3d'
 
@@ -156,7 +158,13 @@ export class ThreejsUtils {
       // this.addGltf();
 
       // 创建地面
-      const groundMesh = MeshGenerator.createPlane(10000, 10000, 0xffffff)
+      const groundGeometry = GeometryManager.createPlaneGeometry({ width: 10000, height: 10000 })
+      const groundMaterial = MaterialManager.createStandardMaterial({
+        color: 0xffffff,
+        metalness: 0,
+        roughness: 1.0
+      })
+      const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial)
       this.scene.add(groundMesh)
 
       // // 创建box
@@ -166,10 +174,21 @@ export class ThreejsUtils {
       // boxMesh.applyMatrix4(matrix)
 
       // 创建球体
-      const sphereMesh = MeshGenerator.createSphere(500, 0xff0000)
-      this.scene.add(sphereMesh)
+      const sphereGeometry = GeometryManager.createSphereGeometry({ radius: 500 })
+      const sphereMaterial = MaterialManager.createPhysicalMaterial({
+        color: 0xffffff,
+        metalness: 0,
+        roughness: 0,
+        transmission: 1,
+        thickness: 0.5,
+        ior: 1.5,
+        // transparent: true,
+        // opacity: 0.2,
+      })
       const matrix = new THREE.Matrix4().makeTranslation(0, 0, 1000)
+      const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial)
       sphereMesh.applyMatrix4(matrix)
+      this.scene.add(sphereMesh)
 
       // 移动相机
       const position = new THREE.Vector3(0, -1500, 500);
