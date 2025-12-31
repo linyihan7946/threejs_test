@@ -83,5 +83,42 @@ export class MeshGenerator {
     }
   }
 
+  /**
+   * 统计场景或对象中所有三角面的数量
+   * @param scene 要统计的场景或Object3D对象
+   * @returns 三角面总数
+   */
+  static countTriangles(scene: THREE.Scene | THREE.Object3D): number {
+    let triangleCount = 0;
+
+    // 遍历场景中的所有对象
+    scene.traverse((object) => {
+      // 检查是否是网格对象
+      if (object instanceof THREE.Mesh) {
+        const mesh = object as THREE.Mesh;
+        const geometry = mesh.geometry;
+
+        if (geometry && geometry instanceof THREE.BufferGeometry) {
+          let faces = 0;
+
+          // 对于BufferGeometry
+          const index = geometry.index;
+          const positionAttribute = geometry.attributes.position;
+
+          if (index) {
+            // 如果有索引缓冲区，三角面数量是索引数量的1/3
+            faces = index.count / 3;
+          } else if (positionAttribute) {
+            // 如果没有索引缓冲区，三角面数量是顶点数量的1/3
+            faces = positionAttribute.count / 3;
+          }
+
+          triangleCount += faces;
+        }
+      }
+    });
+
+    return triangleCount;
+  }
 
 }

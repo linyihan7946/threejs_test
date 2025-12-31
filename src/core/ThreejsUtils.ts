@@ -8,6 +8,7 @@ import { GeometryManager } from './GeometryManager'
 import { MaterialManager } from './MaterialManager'
 import { CameraManager } from './CameraManager'
 import { RGBELoader } from 'three/examples/jsm/Addons.js'
+import { MeshGenerator } from './MeshGenerator'
 // 高斯喷溅
 // import { Viewer } from '@mkkellogg/gaussian-splats-3d'
 
@@ -160,6 +161,9 @@ export class ThreejsUtils {
 
         // 添加环境贴图
         this.addEnvironmentMap()
+
+        const facesCount = MeshGenerator.countTriangles(this.scene);
+        console.log('场景中总三角面数量:', facesCount);
     }
 
     private setupControlsEvents(): void {
