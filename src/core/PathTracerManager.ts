@@ -39,6 +39,14 @@ export class PathTracerManager {
     }
 
     /**
+     * 设置相机参数。相机移动后要调用
+     */
+    public setCamera(camera: THREE.PerspectiveCamera): void {
+        this.camera = camera;
+        this.pathTracer.setCamera(camera);
+    }
+
+    /**
      * 启用光线追踪
      */
     public enable(): void {

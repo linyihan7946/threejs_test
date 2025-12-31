@@ -123,6 +123,7 @@ export class ThreejsUtils {
             this.isDragging = false
             if (this.isUsePathTracerManager && this.pathTracerManager) {
               this.pathTracerManager.enable()
+              this.pathTracerManager.setCamera(this.camera);
             }
             this.cameraStationaryTime = 0
             if (this.isUseOptimized) {
