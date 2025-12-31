@@ -23,7 +23,8 @@ export class ThreejsUtils {
     // 在 ThreejsUtils 构造函数中
     // private viewer!: Viewer;
 
-    private isUseOptimized = true;
+    private isUseOptimized = false;
+    private isUsePathTracerManager = true;
     private pathTracerManager!: PathTracerManager;
     private cameraStationaryTime: number = 0;
     private cameraStationaryThreshold: number = 500;
@@ -105,7 +106,9 @@ export class ThreejsUtils {
         // 监听控制器开始事件
         this.controls.addEventListener('start', () => {
             this.isDragging = true
-            this.pathTracerManager.disable()
+            if (this.isUsePathTracerManager && this.pathTracerManager) {
+              this.pathTracerManager.disable()
+            }
             if (this.isUseOptimized) {
               if (this.sourceTopObject.parent) {
                 this.sourceTopObject.parent.remove(this.sourceTopObject);
@@ -118,6 +121,9 @@ export class ThreejsUtils {
         // 监听控制器结束事件
         this.controls.addEventListener('end', () => {
             this.isDragging = false
+            if (this.isUsePathTracerManager && this.pathTracerManager) {
+              this.pathTracerManager.enable()
+            }
             this.cameraStationaryTime = 0
             if (this.isUseOptimized) {
               if (this.optimizedTopObject.parent) {
@@ -260,23 +266,30 @@ export class ThreejsUtils {
     }
 
     private initPathTracer(): void {
-        this.pathTracerManager = new PathTracerManager(this.renderer, this.scene, this.camera)
-        this.pathTracerManager.setConfig({
-            bounces: 3,
-            renderScale: 1.0,
-            tiles: new THREE.Vector2(2, 2)
-        })
-        this.lastCameraPosition.copy(this.camera.position)
-        this.lastCameraQuaternion.copy(this.camera.quaternion)
+      if (!this.isUsePathTracerManager) {
+        return;
+      }
+      this.pathTracerManager = new PathTracerManager(this.renderer, this.scene, this.camera)
+      this.pathTracerManager.setConfig({
+          bounces: 3,
+          renderScale: 1.0,
+          tiles: new THREE.Vector2(2, 2)
+      })
+      this.lastCameraPosition.copy(this.camera.position)
+      this.lastCameraQuaternion.copy(this.camera.quaternion)
     }
 
     private updatePathTracerState(deltaTime: number): void {
+      if (!this.isUsePathTracerManager) {
+        return;
+      }
         const positionChanged = !this.camera.position.equals(this.lastCameraPosition)
         const rotationChanged = !this.camera.quaternion.equals(this.lastCameraQuaternion)
 
         if (positionChanged || rotationChanged) {
             this.cameraStationaryTime = 0
             this.pathTracerManager.disable()
+
             this.lastCameraPosition.copy(this.camera.position)
             this.lastCameraQuaternion.copy(this.camera.quaternion)
         } else {
@@ -303,8 +316,8 @@ export class ThreejsUtils {
     private animate = (currentTime: number = 0): void => {
         requestAnimationFrame(this.animate)
 
-        const deltaTime = currentTime - this.lastFrameTime
-        this.lastFrameTime = currentTime
+        // const deltaTime = currentTime - this.lastFrameTime
+        // this.lastFrameTime = currentTime
 
         // 开始帧率统计
         this.stats.begin()
@@ -312,14 +325,12 @@ export class ThreejsUtils {
         this.controls.update()
 
         // 光线追踪
-        if (this.pathTracerManager.isEnabled()) {
-          this.updatePathTracerState(deltaTime)
+        if (this.isUsePathTracerManager && this.pathTracerManager && this.pathTracerManager.isEnabled()) {
+          // this.updatePathTracerState(deltaTime)
           this.pathTracerManager.update()
+        } else {
+          this.renderer.render(this.scene, this.camera)
         }
-
-
-        this.renderer.render(this.scene, this.camera)
-
 
         // 结束帧率统计
         this.stats.end()
