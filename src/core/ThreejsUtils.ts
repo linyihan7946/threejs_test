@@ -108,26 +108,47 @@ export class ThreejsUtils {
         this.createGround()
 
         // 添加gltf
-        const object = await this.addGltf();
-        if (object) {
-          const box = new THREE.Box3();
-          box.setFromObject(object);
-          const center = new THREE.Vector3(); box.getCenter(center);
-          const size = new THREE.Vector3(); box.getSize(size);
-          const maxDimension = Math.max(size.x, size.y, size.z)
+        const urls: string[] = [
+          "./34a8f29ef61990d611419e06cad13d90.glb",
+          "./ee757d348617b78f586c66a1631147aa.glb",
+        ];
+        for (let i = 0; i < urls.length; i++) {
+          const url = urls[i];
+          const object = await this.addGltf(url);
+          if (object) {
+            object.applyMatrix4(new THREE.Matrix4().makeTranslation(3000 * i, 0, 0));
+            this.scene.add(object);
+          }
+        }
+
+        // 计算包络框
+        const box = new THREE.Box3();
+        this.scene.children.forEach(o => {
+          if (!o.userData.isGltf) {
+           return;
+          }
+          const b = new THREE.Box3().setFromObject(o);
+          box.union(b);
+        });
+        const center = new THREE.Vector3(); box.getCenter(center);
+        const size = new THREE.Vector3(); box.getSize(size);
+        const maxDimension = Math.max(size.x, size.y, size.z)
+
+        // 设置相机
+        {
           const target = new THREE.Vector3(center.x, center.y, box.min.z);
           const position = target.clone().add(new THREE.Vector3(maxDimension/2, maxDimension/2, -maxDimension/2));
           this.camera.position.copy(position)
           this.camera.up.set(0, 1, 0)
           this.camera.lookAt(target)
-          this.scene.add(object);
-
-          const pos1 = new THREE.Vector3(5000, 5000, 5000);
-          const target1 = new THREE.Vector3();
-          // const pos1 = center.clone().add(size);
-          // const target1 = center.clone(); target1.z = box.min.z;
-          this.addLights(pos1, target1);
         }
+
+        // 添加灯光
+        const pos1 = center.clone().add(size); pos1.z = 6000;
+        const target1 = center.clone(); target1.z = box.min.z;
+        const distance = pos1.distanceTo(target1);
+        const intensity = distance / 50;
+        this.addLights(pos1, target1, intensity);
 
         // 初始化光线追踪管理器
         this.initPathTracer()
@@ -191,8 +212,8 @@ export class ThreejsUtils {
     /**
      * 创建地面
      */
-    private createGround(): void {
-      const groundGeometry = GeometryManager.createPlaneGeometry({ width: 10000, height: 10000 })
+    private createGround(width: number = 80000, height: number = 80000): void {
+      const groundGeometry = GeometryManager.createPlaneGeometry({ width, height })
       const groundMaterial = MaterialManager.createStandardMaterial({
         color: 0xffffff,
         metalness: 0,
@@ -226,8 +247,6 @@ export class ThreejsUtils {
         transmission: 1,
         thickness: 0.5,
         ior: 1.5,
-        // transparent: true,
-        // opacity: 0.2,
       })
       const matrix = new THREE.Matrix4().makeTranslation(0, 0, 1000)
       const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial)
@@ -241,21 +260,12 @@ export class ThreejsUtils {
       this.camera.lookAt(new THREE.Vector3(0, 0, 0))
     }
 
-    private addGltf(): Promise<THREE.Object3D | undefined> {
+    private addGltf(url: string): Promise<THREE.Object3D | undefined> {
       // const url = "./简化后k20场景.gltf";
-      const url = "./ee757d348617b78f586c66a1631147aa.glb"
       const promise: Promise<THREE.Object3D | undefined> = new Promise((resolve) => {
           GltfLoader.Instance.loadGltf(url).then((gltf) => {
             const object = gltf.scene.clone(true);
-
-            // const box = new THREE.Box3().setFromObject(object)
-            // const center = box.getCenter(new THREE.Vector3())
-            // const size = box.getSize(new THREE.Vector3())
-            // const moveMatrix = new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z)
-            // const scaleMatrix = new THREE.Matrix4().makeScale(1000, 1000, 1000)
-            // object.applyMatrix4(moveMatrix)
-            // object.applyMatrix4(scaleMatrix)
-
+            object.userData.isGltf = true;
             resolve(object);
         })
       });
@@ -267,7 +277,7 @@ export class ThreejsUtils {
      * @param position
      * @param target
      */
-    private addLights(position: THREE.Vector3, target: THREE.Vector3): void {
+    private addLights(position: THREE.Vector3, target: THREE.Vector3, intensity: number = 100): void {
         // 添加环境光
         const ambientLight = LightGenerator.createAmbientLight(0xffffff, 0.3)
         this.scene.add(ambientLight)
@@ -275,13 +285,11 @@ export class ThreejsUtils {
         // 添加矩形光
         const rectAreaLight = LightGenerator.createRectAreaLight(
           0xffffff,
-          100,
+          intensity,
           1000,
           1000,
           position,
           target
-          // new THREE.Vector3(5000, 5000, 5000),
-          // new THREE.Vector3(0, 0, 0)
         )
         this.scene.add(rectAreaLight)
 
