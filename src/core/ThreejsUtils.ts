@@ -6,6 +6,7 @@ import { LightGenerator } from './LightGenerator'
 import { PathTracerManager } from './PathTracerManager'
 import { GeometryManager } from './GeometryManager'
 import { MaterialManager } from './MaterialManager'
+import { CameraManager } from './CameraManager'
 import { RGBELoader } from 'three/examples/jsm/Addons.js'
 // 高斯喷溅
 // import { Viewer } from '@mkkellogg/gaussian-splats-3d'
@@ -29,6 +30,7 @@ export class ThreejsUtils {
     private cameraStationaryThreshold: number = 500;
     private lastCameraPosition: THREE.Vector3 = new THREE.Vector3();
     private lastCameraQuaternion: THREE.Quaternion = new THREE.Quaternion();
+    private cameraManager!: CameraManager;
 
     constructor(container: HTMLElement) {
         // 创建场景
@@ -44,6 +46,9 @@ export class ThreejsUtils {
         // 创建相机
         this.camera = new THREE.PerspectiveCamera(60, width / height, 10, 1.0E6)
         this.camera.position.z = 5
+
+        // 初始化相机管理器
+        this.cameraManager = new CameraManager(this.camera)
 
         // 创建渲染器
         this.renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -333,6 +338,13 @@ export class ThreejsUtils {
     public dispose(): void {
         window.removeEventListener('resize', this.onWindowResize.bind(this))
         this.renderer.dispose()
+    }
+
+    /**
+     * 获取相机管理器实例
+     */
+    public getCameraManager(): CameraManager {
+        return this.cameraManager
     }
 
     // 添加加载方法
