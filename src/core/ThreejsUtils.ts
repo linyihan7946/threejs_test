@@ -112,14 +112,19 @@ export class ThreejsUtils {
           "./34a8f29ef61990d611419e06cad13d90.glb",
           "./ee757d348617b78f586c66a1631147aa.glb",
         ];
-        for (let i = 0; i < urls.length; i++) {
-          const url = urls[i];
-          const object = await this.addGltf(url);
-          if (object) {
-            object.applyMatrix4(new THREE.Matrix4().makeTranslation(3000 * i, 0, 0));
-            this.scene.add(object);
+        const object1 = await this.addGltf(urls[0]);
+        const object2 = await this.addGltf(urls[1]);
+        for (let i = -5; i < 5; i++) {
+          for (let j = -5; j < 5; j++) {
+            const pos = new THREE.Vector3(4000 * i, 4000 * j, 0);
+            const object = j % 2 === 0 ? object1?.clone() : object2?.clone();
+            if (object) {
+              object.applyMatrix4(new THREE.Matrix4().makeTranslation(pos));
+              this.scene.add(object);
+            }
           }
         }
+
 
         // 计算包络框
         const box = new THREE.Box3();
@@ -144,10 +149,10 @@ export class ThreejsUtils {
         }
 
         // 添加灯光
-        const pos1 = center.clone().add(size); pos1.z = 6000;
+        const pos1 = center.clone().add(size); pos1.z = maxDimension;
         const target1 = center.clone(); target1.z = box.min.z;
         const distance = pos1.distanceTo(target1);
-        const intensity = distance / 50;
+        const intensity = distance / 10;
         this.addLights(pos1, target1, intensity);
 
         // 初始化光线追踪管理器
