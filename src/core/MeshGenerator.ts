@@ -1,9 +1,10 @@
 import * as THREE from 'three'
 import { MaterialManager } from './MaterialManager'
+import { GeometryManager } from './GeometryManager'
 
 export class MeshGenerator {
   static createBox(size: number = 1000, color: number = 0x00ff00): THREE.Mesh {
-    const boxGeometry = new THREE.BoxGeometry(size, size, size)
+    const boxGeometry = GeometryManager.createBoxGeometry({ width: size, height: size, depth: size })
     const material = MaterialManager.createStandardMaterial({ color: color })
     const boxMesh = new THREE.Mesh(boxGeometry, material)
     boxMesh.receiveShadow = true
@@ -12,7 +13,7 @@ export class MeshGenerator {
   }
 
   static createSphere(radius: number = 500, color: number = 0xff0000): THREE.Mesh {
-    const sphereGeometry = new THREE.SphereGeometry(radius, 32, 32)
+    const sphereGeometry = GeometryManager.createSphereGeometry({ radius, segments: 32 })
     const material = MaterialManager.createStandardMaterial({ color: color })
     const sphereMesh = new THREE.Mesh(sphereGeometry, material)
     sphereMesh.receiveShadow = true
@@ -26,12 +27,11 @@ export class MeshGenerator {
    * @returns
    */
   static createSphereGeometry(radius: number = 500): THREE.BufferGeometry {
-    const sphereGeometry = new THREE.SphereGeometry(radius, 32, 32)
-    return sphereGeometry
+    return GeometryManager.createSphereGeometry({ radius, segments: 32 })
   }
 
   static createPlane(width: number = 1000, height: number = 1000, color: number = 0x0000ff): THREE.Mesh {
-    const planeGeometry = new THREE.PlaneGeometry(width, height)
+    const planeGeometry = GeometryManager.createPlaneGeometry({ width, height })
     const material = MaterialManager.createStandardMaterial({ color: color, side: THREE.DoubleSide })
     const planeMesh = new THREE.Mesh(planeGeometry, material)
     planeMesh.receiveShadow = true
