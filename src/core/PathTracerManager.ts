@@ -87,10 +87,10 @@ export class PathTracerManager {
         const scene = this.pathTracer.scene;
         if (scene) {
             scene.environment = texture;
-            scene.background = texture;
         }
 
         // 当环境贴图变化时，通常需要重置累积采样
+        this.pathTracer.setScene(this.scene, this.camera);
         this.pathTracer.reset();
     }
 

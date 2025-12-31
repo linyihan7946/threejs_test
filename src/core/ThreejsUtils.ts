@@ -8,6 +8,7 @@ import { LightGenerator } from './LightGenerator'
 import { PathTracerManager } from './PathTracerManager'
 import { GeometryManager } from './GeometryManager'
 import { MaterialManager } from './MaterialManager'
+import { RGBELoader } from 'three/examples/jsm/Addons.js'
 // 高斯喷溅
 // import { Viewer } from '@mkkellogg/gaussian-splats-3d'
 
@@ -94,6 +95,9 @@ export class ThreejsUtils {
 
         // 初始化光线追踪管理器
         this.initPathTracer()
+
+        // 添加环境贴图
+        this.addEnvironmentMap()
 
         // 监听窗口大小变化
         window.addEventListener('resize', this.onWindowResize.bind(this))
@@ -280,25 +284,17 @@ export class ThreejsUtils {
       this.lastCameraQuaternion.copy(this.camera.quaternion)
     }
 
-    private updatePathTracerState(deltaTime: number): void {
-      if (!this.isUsePathTracerManager) {
-        return;
-      }
-        const positionChanged = !this.camera.position.equals(this.lastCameraPosition)
-        const rotationChanged = !this.camera.quaternion.equals(this.lastCameraQuaternion)
-
-        if (positionChanged || rotationChanged) {
-            this.cameraStationaryTime = 0
-            this.pathTracerManager.disable()
-
-            this.lastCameraPosition.copy(this.camera.position)
-            this.lastCameraQuaternion.copy(this.camera.quaternion)
-        } else {
-            this.cameraStationaryTime += deltaTime
-            if (this.cameraStationaryTime >= this.cameraStationaryThreshold) {
-                this.pathTracerManager.enable()
-            }
+    private addEnvironmentMap(): void {
+      // 创建一个简单的立方体纹理作为环境贴图
+      new RGBELoader().load("./brown_photostudio_02_4k.hdr", (texture) => {
+        // 将环境贴图应用到场景
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        this.scene.environment = texture;
+        this.scene.environmentIntensity = 0.1
+        if (this.isUsePathTracerManager && this.pathTracerManager) {
+          this.pathTracerManager.setEnvironment(texture);
         }
+      });
     }
 
     private onWindowResize(): void {
@@ -311,14 +307,9 @@ export class ThreejsUtils {
         this.renderer.setPixelRatio(window.devicePixelRatio)
     }
 
-    private lastFrameTime: number = 0;
-
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     private animate = (currentTime: number = 0): void => {
         requestAnimationFrame(this.animate)
-
-        // const deltaTime = currentTime - this.lastFrameTime
-        // this.lastFrameTime = currentTime
 
         // 开始帧率统计
         this.stats.begin()
@@ -327,7 +318,6 @@ export class ThreejsUtils {
 
         // 光线追踪
         if (this.isUsePathTracerManager && this.pathTracerManager && this.pathTracerManager.isEnabled()) {
-          // this.updatePathTracerState(deltaTime)
           this.pathTracerManager.update()
         } else {
           this.renderer.render(this.scene, this.camera)
