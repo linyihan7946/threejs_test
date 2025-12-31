@@ -91,7 +91,7 @@ export class ThreejsUtils {
         this.initStats(container)
 
         // 添加光源
-        this.addLights()
+        // this.addLights()
 
         // 监听窗口大小变化
         window.addEventListener('resize', this.onWindowResize.bind(this))
@@ -115,12 +115,18 @@ export class ThreejsUtils {
           const center = new THREE.Vector3(); box.getCenter(center);
           const size = new THREE.Vector3(); box.getSize(size);
           const maxDimension = Math.max(size.x, size.y, size.z)
-          const target = new THREE.Vector3(center.x, center.y, center.z);
+          const target = new THREE.Vector3(center.x, center.y, box.min.z);
           const position = target.clone().add(new THREE.Vector3(maxDimension/2, maxDimension/2, -maxDimension/2));
           this.camera.position.copy(position)
           this.camera.up.set(0, 1, 0)
           this.camera.lookAt(target)
           this.scene.add(object);
+
+          const pos1 = new THREE.Vector3(5000, 5000, 5000);
+          const target1 = new THREE.Vector3();
+          // const pos1 = center.clone().add(size);
+          // const target1 = center.clone(); target1.z = box.min.z;
+          this.addLights(pos1, target1);
         }
 
         // 初始化光线追踪管理器
@@ -246,9 +252,9 @@ export class ThreejsUtils {
             // const center = box.getCenter(new THREE.Vector3())
             // const size = box.getSize(new THREE.Vector3())
             // const moveMatrix = new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z)
-            const scaleMatrix = new THREE.Matrix4().makeScale(1000, 1000, 1000)
+            // const scaleMatrix = new THREE.Matrix4().makeScale(1000, 1000, 1000)
             // object.applyMatrix4(moveMatrix)
-            object.applyMatrix4(scaleMatrix)
+            // object.applyMatrix4(scaleMatrix)
 
             resolve(object);
         })
@@ -256,7 +262,12 @@ export class ThreejsUtils {
       return promise;
     }
 
-    private addLights(): void {
+    /**
+     * 添加灯光
+     * @param position
+     * @param target
+     */
+    private addLights(position: THREE.Vector3, target: THREE.Vector3): void {
         // 添加环境光
         const ambientLight = LightGenerator.createAmbientLight(0xffffff, 0.3)
         this.scene.add(ambientLight)
@@ -267,8 +278,10 @@ export class ThreejsUtils {
           100,
           1000,
           1000,
-          new THREE.Vector3(5000, 5000, 5000),
-          new THREE.Vector3(0, 0, 0)
+          position,
+          target
+          // new THREE.Vector3(5000, 5000, 5000),
+          // new THREE.Vector3(0, 0, 0)
         )
         this.scene.add(rectAreaLight)
 

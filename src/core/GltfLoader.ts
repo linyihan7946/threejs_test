@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import type { GLTF } from 'three/addons/loaders/GLTFLoader.js'
 
 export class GltfLoader {
@@ -8,6 +9,18 @@ export class GltfLoader {
 
   constructor() {
     this.loader = new GLTFLoader()
+
+    // 创建DracoLoader实例
+    const dracoLoader = new DRACOLoader()
+
+    // 设置Draco解码器路径（使用CDN或本地路径）
+    dracoLoader.setDecoderPath('https://unpkg.com/three@0.177.0/examples/jsm/libs/draco/')
+
+    // 启用WebAssembly解码器（如果可用）
+    dracoLoader.setDecoderConfig({ type: 'js' })
+
+    // 设置GLTFLoader使用DracoLoader
+    this.loader.setDRACOLoader(dracoLoader)
   }
 
   /**
