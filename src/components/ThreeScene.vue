@@ -12,6 +12,7 @@ let threejsUtils: ThreejsUtils | null = null
 onMounted(() => {
   if (container.value) {
     threejsUtils = new ThreejsUtils(container.value)
+    threejsUtils.init()
   }
 })
 

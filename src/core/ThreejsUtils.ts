@@ -2,8 +2,6 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GltfLoader } from './GltfLoader'
 import Stats from 'stats.js'
-import { SceneOptimizer } from './SceneOptimizer'
-import { MeshGenerator } from './MeshGenerator'
 import { LightGenerator } from './LightGenerator'
 import { PathTracerManager } from './PathTracerManager'
 import { GeometryManager } from './GeometryManager'
@@ -25,7 +23,7 @@ export class ThreejsUtils {
     // private viewer!: Viewer;
 
     private isUseOptimized = false;
-    private isUsePathTracerManager = true;
+    private isUsePathTracerManager = false;
     private pathTracerManager!: PathTracerManager;
     private cameraStationaryTime: number = 0;
     private cameraStationaryThreshold: number = 500;
@@ -87,23 +85,41 @@ export class ThreejsUtils {
         // 初始化帧率显示
         this.initStats(container)
 
-        // 创建几何体
-        this.createMeshes()
-
         // 添加光源
         this.addLights()
-
-        // 初始化光线追踪管理器
-        this.initPathTracer()
-
-        // 添加环境贴图
-        this.addEnvironmentMap()
 
         // 监听窗口大小变化
         window.addEventListener('resize', this.onWindowResize.bind(this))
 
         // 开始动画循环
         this.animate()
+    }
+
+    public async init(): Promise<void> {
+        // 创建几何体
+        // this.createMeshes()
+
+        // 添加gltf
+        const object = await this.addGltf();
+        if (object) {
+          const box = new THREE.Box3();
+          box.setFromObject(object);
+          const center = new THREE.Vector3(); box.getCenter(center);
+          const size = new THREE.Vector3(); box.getSize(size);
+          const maxDimension = Math.max(size.x, size.y, size.z)
+          const target = new THREE.Vector3(center.x, center.y, center.z);
+          const position = target.clone().add(new THREE.Vector3(maxDimension/2, maxDimension/2, -maxDimension/2));
+          this.camera.position.copy(position)
+          this.camera.up.set(0, 1, 0)
+          this.camera.lookAt(target)
+          this.scene.add(object);
+        }
+
+        // 初始化光线追踪管理器
+        this.initPathTracer()
+
+        // 添加环境贴图
+        this.addEnvironmentMap()
     }
 
     private setupControlsEvents(): void {
@@ -166,7 +182,6 @@ export class ThreejsUtils {
       // const url = "./garden_high.ksplat";
       // const url = "https://linyihan-1312729243.cos.ap-guangzhou.myqcloud.com/garden_high.ksplat";
       // this.loadGaussianSplatting(url);
-      // this.addGltf();
 
       // 创建地面
       const groundGeometry = GeometryManager.createPlaneGeometry({ width: 10000, height: 10000 })
@@ -208,38 +223,20 @@ export class ThreejsUtils {
       this.camera.lookAt(new THREE.Vector3(0, 0, 0))
     }
 
-    private addGltf(): void {
-      const url = "./场景2-无压缩.glb";
-      GltfLoader.Instance.loadGltf(url).then((gltf) => {
-          const object = gltf.scene.clone(true);
+    private addGltf(): Promise<THREE.Object3D | undefined> {
+      const promise: Promise<THREE.Object3D | undefined> = new Promise((resolve) => {
+          const url = "./场景2-无压缩.glb";
+          GltfLoader.Instance.loadGltf(url).then((gltf) => {
+            const object = gltf.scene.clone(true);
+            const box = new THREE.Box3().setFromObject(object)
+            const center = box.getCenter(new THREE.Vector3())
+            const moveMatrix = new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z)
+            object.applyMatrix4(moveMatrix)
 
-          const box = new THREE.Box3().setFromObject(object)
-          const size = box.getSize(new THREE.Vector3())
-          const center = box.getCenter(new THREE.Vector3())
-          const moveMatrix = new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z)
-          object.applyMatrix4(moveMatrix)
-          box.setFromObject(object); box.getCenter(center); box.getSize(size);
-
-          const maxDimension = Math.max(size.x, size.y, size.z)
-          const target = new THREE.Vector3(center.x, center.y, center.z);
-          const position = target.clone().add(new THREE.Vector3(maxDimension/2, maxDimension/2, -maxDimension/2));
-          this.camera.position.copy(position)
-          this.camera.up.set(0, 1, 0)
-          this.camera.lookAt(target)
-
-          if (this.isUseOptimized) {
-            const sceneOptimizer = SceneOptimizer.Instance;
-            const newObject = sceneOptimizer.splitMultiMaterialMeshes(object);// 不会破面
-            MeshGenerator.disposeObject3D(this.sourceTopObject, false);
-            this.sourceTopObject.add(newObject);
-
-            MeshGenerator.disposeObject3D(this.optimizedTopObject, true);
-            const optimizedScene = sceneOptimizer.optimizeScene(newObject);
-            this.optimizedTopObject.add(optimizedScene);
-          } else {
-            this.scene.add(object);
-          }
-      })
+            resolve(object);
+        })
+      });
+      return promise;
     }
 
     private addLights(): void {
