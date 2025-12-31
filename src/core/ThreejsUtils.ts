@@ -24,7 +24,7 @@ export class ThreejsUtils {
     // private viewer!: Viewer;
 
     private isUseOptimized = false;
-    private isUsePathTracerManager = false;
+    private isUsePathTracerManager = true;
     private pathTracerManager!: PathTracerManager;
     private cameraStationaryTime: number = 0;
     private cameraStationaryThreshold: number = 500;
@@ -54,8 +54,8 @@ export class ThreejsUtils {
         this.renderer = new THREE.WebGLRenderer({ antialias: true })
         this.renderer.setSize(width, height)
         this.renderer.setPixelRatio(window.devicePixelRatio)
-        this.renderer.shadowMap.enabled = true
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
+        // this.renderer.shadowMap.enabled = true
+        // this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.0;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -103,6 +103,9 @@ export class ThreejsUtils {
     public async init(): Promise<void> {
         // 创建几何体
         // this.createMeshes()
+
+        // 创建地面
+        this.createGround()
 
         // 添加gltf
         const object = await this.addGltf();
@@ -179,16 +182,10 @@ export class ThreejsUtils {
         container.appendChild(this.stats.dom)
     }
 
-    private createMeshes(): void {
-      // const url = "./37room3.ply";
-      // const url = "./MT20250416-100556_ID611_OK.ply";// 37楼茶水间（显示不出来）
-      // const url = "./room.ply";// 效果不行
-      // const url = "./chair.ply";// 有鬼影
-      // const url = "./garden_high.ksplat";
-      // const url = "https://linyihan-1312729243.cos.ap-guangzhou.myqcloud.com/garden_high.ksplat";
-      // this.loadGaussianSplatting(url);
-
-      // 创建地面
+    /**
+     * 创建地面
+     */
+    private createGround(): void {
       const groundGeometry = GeometryManager.createPlaneGeometry({ width: 10000, height: 10000 })
       const groundMaterial = MaterialManager.createStandardMaterial({
         color: 0xffffff,
@@ -197,6 +194,16 @@ export class ThreejsUtils {
       })
       const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial)
       this.scene.add(groundMesh)
+    }
+
+    private createMeshes(): void {
+      // const url = "./37room3.ply";
+      // const url = "./MT20250416-100556_ID611_OK.ply";// 37楼茶水间（显示不出来）
+      // const url = "./room.ply";// 效果不行
+      // const url = "./chair.ply";// 有鬼影
+      // const url = "./garden_high.ksplat";
+      // const url = "https://linyihan-1312729243.cos.ap-guangzhou.myqcloud.com/garden_high.ksplat";
+      // this.loadGaussianSplatting(url);
 
       // // 创建box
       // const boxMesh = MeshGenerator.createBox(1000, 0xff0000)
@@ -229,14 +236,19 @@ export class ThreejsUtils {
     }
 
     private addGltf(): Promise<THREE.Object3D | undefined> {
+      // const url = "./简化后k20场景.gltf";
+      const url = "./ee757d348617b78f586c66a1631147aa.glb"
       const promise: Promise<THREE.Object3D | undefined> = new Promise((resolve) => {
-          const url = "./场景2-无压缩.glb";
           GltfLoader.Instance.loadGltf(url).then((gltf) => {
             const object = gltf.scene.clone(true);
-            const box = new THREE.Box3().setFromObject(object)
-            const center = box.getCenter(new THREE.Vector3())
-            const moveMatrix = new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z)
-            object.applyMatrix4(moveMatrix)
+
+            // const box = new THREE.Box3().setFromObject(object)
+            // const center = box.getCenter(new THREE.Vector3())
+            // const size = box.getSize(new THREE.Vector3())
+            // const moveMatrix = new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z)
+            const scaleMatrix = new THREE.Matrix4().makeScale(1000, 1000, 1000)
+            // object.applyMatrix4(moveMatrix)
+            object.applyMatrix4(scaleMatrix)
 
             resolve(object);
         })
